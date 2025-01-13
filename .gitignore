@@ -4,8 +4,11 @@ __pycache__/
 .env.local
 .env
 .env.global
+<<<<<<< HEAD
 .env.base
 .localenv
+=======
+>>>>>>> 13111ad (Local migration script rewrite working)
 .idea/
 .vscode/
 *.log
