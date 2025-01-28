@@ -17,6 +17,7 @@ from app.repositories.implementations.message_repository import MessageRepositor
 from app.repositories.implementations.conversation_repository import ConversationRepository
 from app.repositories.implementations.domain_repository import DomainRepository
 from app.repositories.implementations.source_repository import SourceRepository
+from app.repositories.implementations.search_repository import SearchRepository
 from app.repositories.implementations.feedback_repository import FeedbackRepository
 from app.core.config import settings
 from app.services.analysis_orchestrator import AnalysisOrchestrator
@@ -30,6 +31,7 @@ from app.services.message_service import MessageService
 from app.services.conversation_service import ConversationService
 from app.services.domain_service import DomainService
 from app.services.source_service import SourceService
+from app.services.search_service import SearchService
 from app.services.feedback_service import FeedbackService
 
 logger = logging.getLogger(__name__)
@@ -70,6 +72,10 @@ async def get_domain_repository(session: Session = Depends(get_db)) -> DomainRep
 
 async def get_source_repository(session: Session = Depends(get_db)) -> SourceRepository:
     return SourceRepository(session)
+
+
+async def get_search_repository(session: Session = Depends(get_db)) -> SearchRepository:
+    return SearchRepository(session)
 
 
 async def get_feedback_repository(session: Session = Depends(get_db)) -> FeedbackRepository:
@@ -122,9 +128,18 @@ async def get_source_service(
     source_repository: SourceRepository = Depends(get_source_repository),
     domain_service: DomainService = Depends(get_domain_service),
     analysis_repository: AnalysisRepository = Depends(get_analysis_repository),
+    search_repository: SearchRepository = Depends(get_search_repository),
     claim_repository: ClaimRepository = Depends(get_claim_repository),
 ) -> SourceService:
-    return SourceService(source_repository, domain_service, analysis_repository, claim_repository)
+    return SourceService(source_repository, domain_service, analysis_repository, search_repository, claim_repository)
+
+
+async def get_search_service(
+    search_repository: SearchRepository = Depends(get_search_repository),
+    analysis_repository: AnalysisRepository = Depends(get_analysis_repository),
+    claim_repository: ClaimRepository = Depends(get_claim_repository),
+) -> SearchService:
+    return SearchService(search_repository, analysis_repository, claim_repository)
 
 
 async def get_feedback_service(
@@ -157,6 +172,7 @@ async def get_orchestrator_service(
     claim_conversation_repository: ClaimConversationRepository = Depends(get_claim_conversation_repository),
     message_repository: MessageRepository = Depends(get_message_repository),
     source_repository: SourceRepository = Depends(get_source_repository),
+    search_repository: SearchRepository = Depends(get_search_repository),
     web_search_service: WebSearchServiceInterface = Depends(get_web_search_service),
     llm_provider=Depends(get_llm_provider),
 ) -> AnalysisOrchestrator:
@@ -169,6 +185,7 @@ async def get_orchestrator_service(
         claim_conversation_repo=claim_conversation_repository,
         message_repo=message_repository,
         source_repo=source_repository,
+        search_repo=search_repository,
         web_search_service=web_search_service,
         llm_provider=llm_provider,
     )

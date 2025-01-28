@@ -1,14 +1,16 @@
 import logging
-from typing import AsyncGenerator, Dict, Any, List, Optional
+from typing import AsyncGenerator, Dict, Any, List, Optional, NamedTuple
 from uuid import UUID, uuid4
 from datetime import UTC, datetime
 import json
+import re
 
 from app.core.exceptions import NotAuthorizedException, NotFoundException
 from app.core.llm.interfaces import LLMProvider
 from app.models.database.models import AnalysisStatus, ClaimStatus, ConversationStatus, MessageSenderType
 from app.models.domain.claim import Claim
 from app.models.domain.analysis import Analysis
+from app.models.domain.search import Search
 from app.models.domain.message import Message
 from app.core.llm.messages import Message as LLMMessage
 from app.models.domain.conversation import Conversation
@@ -19,9 +21,22 @@ from app.repositories.implementations.analysis_repository import AnalysisReposit
 from app.repositories.implementations.message_repository import MessageRepository
 from app.repositories.implementations.conversation_repository import ConversationRepository
 from app.repositories.implementations.source_repository import SourceRepository
+from app.repositories.implementations.search_repository import SearchRepository
 from app.services.interfaces.web_search_service import WebSearchServiceInterface
 
+from app.core.llm.prompts import AnalysisPrompt
+
 logger = logging.getLogger(__name__)
+
+MAX_NUM_TURNS: int = 10
+MAX_SEARCH_RESULTS: int = 10
+
+
+class _KeywordExtractionOutput(NamedTuple):
+    """Represent the part up to the matched string, and the match itself."""
+
+    content_up_to_match: str
+    matched_content: str
 
 
 class AnalysisState:
@@ -44,6 +59,7 @@ class AnalysisOrchestrator:
         claim_conversation_repo: ClaimConversationRepository,
         message_repo: MessageRepository,
         source_repo: SourceRepository,
+        search_repo: SearchRepository,
         web_search_service: WebSearchServiceInterface,
     ):
         self._llm = llm_provider
@@ -53,6 +69,7 @@ class AnalysisOrchestrator:
         self._claim_conversation_repo = claim_conversation_repo
         self._message_repo = message_repo
         self._source_repo = source_repo
+        self._search_repo = search_repo
         self._web_search = web_search_service
         self._analysis_state = AnalysisState()
 
@@ -73,13 +90,56 @@ class AnalysisOrchestrator:
 
             yield {"type": "status", "content": "Searching for relevant sources..."}
 
-            sources = await self._web_search.search_and_create_sources(
-                claim_text=claim_text, analysis_id=current_analysis.id
-            )
+            query = self._query_initial(claim_text)
+            messages = [LLMMessage(role="user", content=query)]
+            all_sources = []
+            for turns in range(MAX_NUM_TURNS):
 
-            source_credibility = self._web_search.calculate_overall_credibility(sources)
+                response = await self._llm.generate_response(messages)
 
-            if not sources:
+                main_agent_message = response.text
+                assert main_agent_message is not None, (
+                    "Invalid Main Agent API response:",
+                    response,
+                )
+                # logging.info(messages)
+                # logging.info(main_agent_message)
+                # If search is requested in a message, truncate that message
+                # up to the search request. (Discard anything after the query.)
+                search_request_match = self._extract_search_query_or_none(main_agent_message)
+                if search_request_match is not None:
+                    # logging.info(search_request_match.content_up_to_match)
+                    initial_search = Search(
+                        id=uuid4(),
+                        analysis_id=current_analysis.id,
+                        prompt=search_request_match.matched_content,
+                        summary=search_request_match.content_up_to_match,
+                        created_at=datetime.now(UTC),
+                        updated_at=datetime.now(UTC),
+                    )
+                    current_search = await self._search_repo.create(initial_search)
+                    sources = await self._web_search.search_and_create_sources(
+                        search_request_match.matched_content, current_search.id
+                    )
+
+                    all_sources += sources
+
+                    search_response = self._web_search.format_sources_for_prompt(sources)
+
+                    messages += [
+                        LLMMessage(role="assistant", content=main_agent_message),
+                        LLMMessage(role="user", content=f"Search result: {search_response}"),
+                    ]
+                    continue
+                else:
+                    messages += [LLMMessage(role="assistant", content=main_agent_message)]
+
+                if main_agent_message.strip().lower().endswith("ready"):
+                    break
+
+            source_credibility = self._web_search.calculate_overall_credibility(all_sources)
+
+            if not all_sources:
                 yield {
                     "type": "status",
                     "content": "No reliable sources found. Proceeding with analysis based on claim content only.",
@@ -90,30 +150,15 @@ class AnalysisOrchestrator:
                     "content": f"Found {len(sources)} relevant sources (overall credibility: {source_credibility:.2f})",
                 }
 
-            sources_text = self._web_search.format_sources_for_prompt(sources)
-
-            prompt = (
-                "You are a fact-checking system. Analyze the following claim using the provided sources and context.\n\n"
-                f"Claim: {claim_text}\n\n"
-                f"Context: {context}\n\n"
-                f"Sources:\n{sources_text}\n\n"
-                "Provide your analysis in the following JSON format:\n"
-                "{\n"
-                '    "veracity_score": <float between 0 and 1>,\n'
-                '    "confidence_score": <float between 0 and 1>,\n'
-                '    "analysis": "<detailed analysis text>"\n'
-                "}\n\n"
-                "Important formatting rules:\n"
-                "1. Provide ONLY the JSON object, no additional text\n"
-                "2. Ensure all special characters in the analysis text are properly escaped\n"
-                "3. The analysis field should be a single line with newlines represented as \\n\n"
-                "4. Do not include any control characters\n"
-            )
-
+            sources_text = self._web_search.format_sources_for_prompt(all_sources)
+            logger.debug(f"Sources for all searches to be analyzed {sources_text}")
             yield {"type": "status", "content": "Analyzing claim with gathered sources..."}
 
+            messages += [LLMMessage(role="user", content=AnalysisPrompt.GET_VERACITY)]
+
             analysis_text = []
-            async for chunk in self._llm.generate_stream([LLMMessage(role="user", content=prompt)]):
+            logger.info(messages)
+            async for chunk in self._llm.generate_stream(messages):
                 if not chunk.is_complete:
                     analysis_text.append(chunk.text)
                     yield {"type": "content", "content": chunk.text}
@@ -140,15 +185,14 @@ class AnalysisOrchestrator:
 
                         response_data = json.loads(cleaned_text)
 
+                        logger.info(response_data)
+
                         veracity_score = float(response_data.get("veracity_score", 0))
-                        confidence_score = float(response_data.get("confidence_score", 0))
                         analysis_content = str(response_data.get("analysis", "No analysis provided"))
 
                         veracity_score = max(0.0, min(1.0, veracity_score))
-                        confidence_score = max(0.0, min(1.0, confidence_score))
 
                         current_analysis.veracity_score = veracity_score
-                        current_analysis.confidence_score = confidence_score
                         current_analysis.analysis_text = analysis_content
                         current_analysis.status = AnalysisStatus.completed.value
                         current_analysis.updated_at = datetime.now(UTC)
@@ -160,8 +204,7 @@ class AnalysisOrchestrator:
                             "content": {
                                 "analysis_id": str(updated_analysis.id),
                                 "veracity_score": updated_analysis.veracity_score,
-                                "confidence_score": updated_analysis.confidence_score,
-                                "num_sources": len(sources),
+                                "num_sources": len(all_sources),
                                 "source_credibility": source_credibility,
                             },
                         }
@@ -172,16 +215,13 @@ class AnalysisOrchestrator:
 
                         try:
                             veracity_match = re.search(r'"veracity_score":\s*(0?\.\d+)', cleaned_text)
-                            confidence_match = re.search(r'"confidence_score":\s*(0?\.\d+)', cleaned_text)
                             analysis_match = re.search(r'"analysis":\s*"([^"]+)"', cleaned_text)
 
-                            if veracity_match and confidence_match and analysis_match:
+                            if veracity_match and analysis_match:
                                 veracity_score = float(veracity_match.group(1))
-                                confidence_score = float(confidence_match.group(1))
                                 analysis_content = analysis_match.group(1)
 
                                 current_analysis.veracity_score = veracity_score
-                                current_analysis.confidence_score = confidence_score
                                 current_analysis.analysis_text = analysis_content
                                 current_analysis.status = AnalysisStatus.completed.value
                                 current_analysis.updated_at = datetime.now(UTC)
@@ -193,8 +233,7 @@ class AnalysisOrchestrator:
                                     "content": {
                                         "analysis_id": str(updated_analysis.id),
                                         "veracity_score": updated_analysis.veracity_score,
-                                        "confidence_score": updated_analysis.confidence_score,
-                                        "num_sources": len(sources),
+                                        "num_sources": len(all_sources),
                                         "source_credibility": source_credibility,
                                     },
                                 }
@@ -422,15 +461,6 @@ class AnalysisOrchestrator:
             await self._claim_repo.update_status(claim_id, ClaimStatus.analyzing)
             yield {"type": "status", "content": "Starting analysis..."}
 
-            is_verifiable = await self._detect_claim(claim.claim_text)
-            logger.debug(f"Claim verifiable check result: {is_verifiable}")
-
-            # Flagging behaviour to remove
-            if not is_verifiable:
-                yield {"type": "status", "content": "This doesn't appear to be a verifiable claim."}
-                await self._claim_repo.update_status(claim_id, ClaimStatus.rejected)
-                return
-
             # Generate analysis
             analysis_complete = False
             async for chunk in self._generate_analysis(claim.claim_text, claim.context):
@@ -569,3 +599,68 @@ class AnalysisOrchestrator:
             logger.error(f"Error in stream_claim_discussion: {str(e)}", exc_info=True)
             yield {"type": "error", "content": str(e)}
             raise
+
+    def clean_text(text):
+        cleaned_text = re.sub(r"[^a-zA-Z,.?!' ]", "", text)
+        return cleaned_text
+
+    def _query_initial(self, statement: str):
+
+        return AnalysisPrompt.ORCHESTRATOR_PROMPT.format(statement=statement)
+
+    def _extract_search_query_or_none(
+        self,
+        assistant_response: str,
+    ) -> Optional[_KeywordExtractionOutput]:
+        """
+        Try to extract "SEARCH: query\\n" request from the main agent response.
+
+        Discards anything after the "query" part.
+
+        Returns:
+            _KeywordExtractionOutput if matched.
+            None otherwise.
+        """
+        match = re.search(r"^(?:REASON:\s*)?(.*?)\s*SEARCH:\s+(.+)$", assistant_response, re.DOTALL | re.MULTILINE)
+        if match is None:
+            return None
+        return _KeywordExtractionOutput(
+            content_up_to_match=match.group(1),
+            matched_content=match.group(2),
+        )
+
+    def _extract_search_summary_or_none(
+        self,
+        assistant_response: str,
+    ) -> Optional[_KeywordExtractionOutput]:
+        """
+        Try to extract "SEARCH: query\\n" request from the main agent response.
+
+        Discards anything after the "query" part.
+
+        Returns:
+            _KeywordExtractionOutput if matched.
+            None otherwise.
+        """
+        match = re.search(r"(.*?SUMMARY:\s+)(.+?)(\s*$)", assistant_response, re.DOTALL | re.MULTILINE)
+        if match is None:
+            return None
+        return _KeywordExtractionOutput(
+            content_up_to_match=match.group(1) + match.group(2),
+            matched_content=match.group(2),
+        )
+
+    def _extract_prediction_or_none(self, assistant_response: str) -> Optional[str]:
+        """
+        Try to extract "Factuality: 0 to 1" from main agent response.
+
+        Response:
+            Prediction value (as a string) if matched.
+            None otherwise.
+        """
+
+        match = re.search(r"READY", assistant_response)
+        if match is None:
+            return None
+
+        return match.group(1)
