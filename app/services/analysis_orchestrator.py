@@ -98,6 +98,9 @@ class AnalysisOrchestrator:
                 response = await self._llm.generate_response(messages)
 
                 main_agent_message = response.text
+
+                logging.info(main_agent_message)
+
                 assert main_agent_message is not None, (
                     "Invalid Main Agent API response:",
                     response,
@@ -108,7 +111,6 @@ class AnalysisOrchestrator:
                 # up to the search request. (Discard anything after the query.)
                 search_request_match = self._extract_search_query_or_none(main_agent_message)
                 if search_request_match is not None:
-                    # logging.info(search_request_match.content_up_to_match)
                     initial_search = Search(
                         id=uuid4(),
                         analysis_id=current_analysis.id,
@@ -621,7 +623,7 @@ class AnalysisOrchestrator:
             _KeywordExtractionOutput if matched.
             None otherwise.
         """
-        match = re.search(r"^(?:REASON:\s*)?(.*?)\s*SEARCH:\s+(.+)$", assistant_response, re.DOTALL | re.MULTILINE)
+        match = re.search(r"^\s*REASON:\s*(.*?)\s*SEARCH:\s+(.+)$", assistant_response, re.DOTALL | re.MULTILINE)
         if match is None:
             return None
         return _KeywordExtractionOutput(
