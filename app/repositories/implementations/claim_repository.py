@@ -1,3 +1,4 @@
+import logging
 from typing import Optional, List, Tuple
 from uuid import UUID
 from sqlalchemy import select, func
@@ -7,6 +8,8 @@ from app.models.database.models import ClaimModel, ClaimStatus
 from app.models.domain.claim import Claim
 from app.repositories.base import BaseRepository
 from app.repositories.interfaces.claim_repository import ClaimRepositoryInterface
+
+logger = logging.getLogger(__name__)
 
 
 class ClaimRepository(BaseRepository[ClaimModel, Claim], ClaimRepositoryInterface):
@@ -59,10 +62,15 @@ class ClaimRepository(BaseRepository[ClaimModel, Claim], ClaimRepositoryInterfac
         return claims, total
 
     async def update_status(self, claim_id: UUID, status: ClaimStatus) -> Optional[Claim]:
-        """Update claim status."""
-        claim = await self.get(claim_id)
-        if not claim:
-            return None
+        try:
+            claim = await self.get(claim_id)
+            if not claim:
+                return None
 
-        claim.status = status.value
-        return await self.update(claim)
+            claim.status = status
+            updated_claim = await self.update(claim)
+            return updated_claim
+
+        except Exception:
+            logger.exception("Error updating claim status")
+            raise
