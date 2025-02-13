@@ -17,7 +17,34 @@ class AnalysisPrompt:
 
         """
 
+    ORCHESTRATOR_PROMPT_FR = """
+        You have access to a search engine tool. To invoke search, begin by explaining your reasoning for invoking search with the phrase
+        "REASON: ", then begin your query with the phrase
+        “SEARCH: ”. You may invoke the search tool as many times as needed. Your task is to analyze the
+        factuality of the given statement state a score from 0.00 to 1.00, where 0.00 represents definitively false and 1.00 represents definitively true.
+        When you have finished conducting all searches, your only message should be "READY".
+        There should be no extra text. You must then wait for the User to specify their desired output format.
+
+        Statement: {statement}
+        """
+
     GET_VERACITY = """
+
+    "After providing all your analysis steps, summarize your analysis and state a score from 0 to 1,
+    where 0 represents definitively false and 1 represents definitively true, in the following JSON format:\n"
+        "{\n"
+        '    "veracity_score": <float between 0 and 1>,\n'
+        '    "analysis": "<detailed analysis text>"\n'
+        "}\n\n"
+        "Important formatting rules:\n"
+        "1. Provide ONLY the JSON object, no additional text\n"
+        "2. Ensure all special characters in the analysis text are properly escaped\n"
+        "3. The analysis field should be a single line with newlines represented as \\n\n"
+        "4. Do not include any control characters\n"
+
+    """
+
+    GET_VERACITY_FR = """
 
     "After providing all your analysis steps, summarize your analysis and state a score from 0 to 1,
     where 0 represents definitively false and 1 represents definitively true, in the following JSON format:\n"

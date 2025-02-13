@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 import json
 import re
 
-from app.core.exceptions import NotAuthorizedException, NotFoundException
+from app.core.exceptions import NotAuthorizedException, NotFoundException, ValidationError
 from app.core.llm.interfaces import LLMProvider
 from app.models.database.models import AnalysisStatus, ClaimStatus, ConversationStatus, MessageSenderType
 from app.models.domain.claim import Claim
@@ -73,7 +73,7 @@ class AnalysisOrchestrator:
         self._web_search = web_search_service
         self._analysis_state = AnalysisState()
 
-    async def _generate_analysis(self, claim_text: str, context: str) -> AsyncGenerator[Dict[str, Any], None]:
+    async def _generate_analysis(self, claim_text: str, context: str, language: str) -> AsyncGenerator[Dict[str, Any], None]:
         """Generate analysis for a claim with web search and source management."""
         try:
             initial_analysis = Analysis(
@@ -90,7 +90,7 @@ class AnalysisOrchestrator:
 
             yield {"type": "status", "content": "Searching for relevant sources..."}
 
-            query = self._query_initial(claim_text)
+            query = self._query_initial(claim_text, language)
             messages = [LLMMessage(role="user", content=query)]
             all_sources = []
             for turns in range(MAX_NUM_TURNS):
@@ -109,7 +109,8 @@ class AnalysisOrchestrator:
                 # logging.info(main_agent_message)
                 # If search is requested in a message, truncate that message
                 # up to the search request. (Discard anything after the query.)
-                search_request_match = self._extract_search_query_or_none(main_agent_message)
+                
+                search_request_match = self._extract_search_query_or_none(main_agent_message, language)
                 if search_request_match is not None:
                     initial_search = Search(
                         id=uuid4(),
@@ -126,17 +127,28 @@ class AnalysisOrchestrator:
 
                     all_sources += sources
 
-                    search_response = self._web_search.format_sources_for_prompt(sources)
+                    search_response = self._web_search.format_sources_for_prompt(sources, language)
 
-                    messages += [
-                        LLMMessage(role="assistant", content=main_agent_message),
-                        LLMMessage(role="user", content=f"Search result: {search_response}"),
-                    ]
+                    if language == "english" :
+                        messages += [
+                            LLMMessage(role="assistant", content=main_agent_message),
+                            LLMMessage(role="user", content=f"Search result: {search_response}"),
+                        ]
+                    elif language == "french":
+                        messages += [
+                            LLMMessage(role="assistant", content=main_agent_message),
+                            #TODO Translate this
+                            LLMMessage(role="user", content=f"Résultat(s) de la recherche sur le Web: {search_response}"),
+                        ]
+                    else :
+                        raise ValidationError("Claim Language is invalid")
+
                     continue
                 else:
                     messages += [LLMMessage(role="assistant", content=main_agent_message)]
 
-                if main_agent_message.strip().lower().endswith("ready"):
+                #TODO once the French prompt is settled
+                if main_agent_message.strip().lower().endswith("ready") or main_agent_message.strip().lower().endswith("prêt") or main_agent_message.strip().lower().endswith("prête"):
                     break
 
             source_credibility = self._web_search.calculate_overall_credibility(all_sources)
@@ -152,11 +164,14 @@ class AnalysisOrchestrator:
                     "content": f"Found {len(sources)} relevant sources (overall credibility: {source_credibility:.2f})",
                 }
 
-            sources_text = self._web_search.format_sources_for_prompt(all_sources)
+            sources_text = self._web_search.format_sources_for_prompt(all_sources, language)
             logger.debug(f"Sources for all searches to be analyzed {sources_text}")
             yield {"type": "status", "content": "Analyzing claim with gathered sources..."}
 
-            messages += [LLMMessage(role="user", content=AnalysisPrompt.GET_VERACITY)]
+            if language == "english": 
+                messages += [LLMMessage(role="user", content=AnalysisPrompt.GET_VERACITY)]
+            elif language == "french": 
+                messages += [LLMMessage(role="user", content=AnalysisPrompt.GET_VERACITY_FR)]
 
             analysis_text = []
             logger.info(messages)
@@ -373,7 +388,7 @@ class AnalysisOrchestrator:
         return response.text.strip().lower() == "true"
 
     async def _handle_claim_message(
-        self, user_id: UUID, conversation_id: UUID, content: str
+        self, user_id: UUID, conversation_id: UUID, content: str, language: str
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """Handle message containing a claim"""
         claim_text = await self._extract_claim(content)
@@ -389,7 +404,7 @@ class AnalysisOrchestrator:
 
         yield {"type": "status", "content": "Analyzing claim..."}
 
-        async for chunk in self._generate_analysis(claim_text, content):
+        async for chunk in self._generate_analysis(claim_text, content, language):
             if chunk["type"] == "content":
                 await self._store_bot_message(
                     conversation_id=conversation_id, content=chunk["content"], claim_id=claim.id
@@ -465,7 +480,7 @@ class AnalysisOrchestrator:
 
             # Generate analysis
             analysis_complete = False
-            async for chunk in self._generate_analysis(claim.claim_text, claim.context):
+            async for chunk in self._generate_analysis(claim.claim_text, claim.context, claim.language):
                 if chunk["type"] == "analysis_complete":
                     analysis_complete = True
                     # Get the full analysis to create conversation
@@ -606,13 +621,20 @@ class AnalysisOrchestrator:
         cleaned_text = re.sub(r"[^a-zA-Z,.?!' ]", "", text)
         return cleaned_text
 
-    def _query_initial(self, statement: str):
+    def _query_initial(self, statement: str, language: str):
 
-        return AnalysisPrompt.ORCHESTRATOR_PROMPT.format(statement=statement)
+        if language == "english":
+
+            return AnalysisPrompt.ORCHESTRATOR_PROMPT.format(statement=statement)
+        elif language == "french": 
+            return AnalysisPrompt.ORCHESTRATOR_PROMPT_FR.format(statement=statement)
+        else:
+            raise ValidationError("Claim Language is invalid")
 
     def _extract_search_query_or_none(
         self,
         assistant_response: str,
+        language: str,
     ) -> Optional[_KeywordExtractionOutput]:
         """
         Try to extract "SEARCH: query\\n" request from the main agent response.
@@ -623,7 +645,14 @@ class AnalysisOrchestrator:
             _KeywordExtractionOutput if matched.
             None otherwise.
         """
-        match = re.search(r"^\s*REASON:\s*(.*?)\s*SEARCH:\s+(.+)$", assistant_response, re.DOTALL | re.MULTILINE)
+        if language == "english":
+            match = re.search(r"^\s*REASON:\s*(.*?)\s*SEARCH:\s+(.+)$", assistant_response, re.DOTALL | re.MULTILINE)
+        elif language == "french":
+            #TODO replace once French Prompt is settled
+            match = re.search(r"^\s*REASON:\s*(.*?)\s*SEARCH:\s+(.+)$", assistant_response, re.DOTALL | re.MULTILINE)
+        else:
+            raise ValidationError("Claim Language is invalid")
+        
         if match is None:
             return None
         return _KeywordExtractionOutput(
