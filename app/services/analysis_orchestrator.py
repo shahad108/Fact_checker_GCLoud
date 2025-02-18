@@ -204,12 +204,12 @@ class AnalysisOrchestrator:
 
                         logger.info(response_data)
 
-                        veracity_score = float(response_data.get("veracity_score", 0))
+                        veracity_score = int(response_data.get("veracity_score", 0))
                         analysis_content = str(response_data.get("analysis", "No analysis provided"))
 
-                        veracity_score = max(0.0, min(1.0, veracity_score))
+                        veracity_score = max(0, min(100, veracity_score))
 
-                        current_analysis.veracity_score = veracity_score
+                        current_analysis.veracity_score = float(veracity_score)/100
                         current_analysis.analysis_text = analysis_content
                         current_analysis.status = AnalysisStatus.completed.value
                         current_analysis.updated_at = datetime.now(UTC)
@@ -235,10 +235,10 @@ class AnalysisOrchestrator:
                             analysis_match = re.search(r'"analysis":\s*"([^"]+)"', cleaned_text)
 
                             if veracity_match and analysis_match:
-                                veracity_score = float(veracity_match.group(1))
+                                veracity_score = int(veracity_match.group(1))
                                 analysis_content = analysis_match.group(1)
 
-                                current_analysis.veracity_score = veracity_score
+                                current_analysis.veracity_score = float(veracity_score)/100
                                 current_analysis.analysis_text = analysis_content
                                 current_analysis.status = AnalysisStatus.completed.value
                                 current_analysis.updated_at = datetime.now(UTC)
@@ -624,7 +624,6 @@ class AnalysisOrchestrator:
     def _query_initial(self, statement: str, language: str):
 
         if language == "english":
-
             return AnalysisPrompt.ORCHESTRATOR_PROMPT.format(statement=statement)
         elif language == "french": 
             return AnalysisPrompt.ORCHESTRATOR_PROMPT_FR.format(statement=statement)
