@@ -9,7 +9,7 @@ class AnalysisPrompt:
         You have access to a search engine tool. To invoke search, begin by explaining your reasoning for invoking search with the phrase
         "REASON: ", then begin your query with the phrase
         “SEARCH: ”. You may invoke the search tool as many times as needed. Your task is to analyze the
-        factuality of the given statement state a score from 0.00 to 1.00, where 0.00 represents definitively false and 1.00 represents definitively true.
+        factuality of the given statement and state a score from 0 to 100, where 0 represents definitively false and 100 represents definitively true.
         When you have finished conducting all searches, your only message should be "READY".
         There should be no extra text. You must then wait for the User to specify their desired output format.
 
@@ -18,22 +18,24 @@ class AnalysisPrompt:
         """
 
     ORCHESTRATOR_PROMPT_FR = """
-        You have access to a search engine tool. To invoke search, begin by explaining your reasoning for invoking search with the phrase
-        "REASON: ", then begin your query with the phrase
-        “SEARCH: ”. You may invoke the search tool as many times as needed. Your task is to analyze the
-        factuality of the given statement state a score from 0.00 to 1.00, where 0.00 represents definitively false and 1.00 represents definitively true.
-        When you have finished conducting all searches, your only message should be "READY".
-        There should be no extra text. You must then wait for the User to specify their desired output format.
+        Vous avez accès à un moteur de recherche. Pour lancer la recherche, commencez par expliquer votre raisonnement avec la phrase
+        "REASON : ", puis commencez votre requête par la phrase
+        "SEARCH : ". Vous pouvez invoquer le moteur de recherche autant de fois que nécessaire. Votre tâche consiste à analyser la
+        véracité de l'affirmation donné et à indiquer un index de 0 à 100, où 0 représente définitivement faux et 100 représente définitivement vrai.
+        Lorsque vous avez terminé d'effectuer toutes les recherches, votre seul message devrait être "PRÊT".
+        Il ne doit pas y avoir de texte supplémentaire. Vous devez ensuite attendre que l'utilisateur spécifie le format de sortie souhaité.
 
-        Statement: {statement}
-        """
+        L'affirmation: {statement}
+       
+       """
+
 
     GET_VERACITY = """
 
     "After providing all your analysis steps, summarize your analysis and state a score from 0 to 1,
-    where 0 represents definitively false and 1 represents definitively true, in the following JSON format:\n"
+    where 0 represents definitively false and 100 represents definitively true, in the following JSON format:\n"
         "{\n"
-        '    "veracity_score": <float between 0 and 1>,\n'
+        '    "veracity_score": <integer between 0 and 100>,\n'
         '    "analysis": "<detailed analysis text>"\n'
         "}\n\n"
         "Important formatting rules:\n"
@@ -46,19 +48,20 @@ class AnalysisPrompt:
 
     GET_VERACITY_FR = """
 
-    "After providing all your analysis steps, summarize your analysis and state a score from 0 to 1,
-    where 0 represents definitively false and 1 represents definitively true, in the following JSON format:\n"
+    "Après avoir fourni toutes vos étapes d'analyse, résumez votre analyse et indiquez un score de 0 à 100,
+    où 0 représente définitivement faux et 100 représente définitivement vrai, dans le format JSON suivant:\n"
         "{\n"
-        '    "veracity_score": <float between 0 and 1>,\n'
-        '    "analysis": "<detailed analysis text>"\n'
+        '    "veracity_score": <integer entre 0 et 100>,\n'
+        '    "analysis": "<résumé de votre analyse>"\n'
         "}\n\n"
-        "Important formatting rules:\n"
-        "1. Provide ONLY the JSON object, no additional text\n"
-        "2. Ensure all special characters in the analysis text are properly escaped\n"
-        "3. The analysis field should be a single line with newlines represented as \\n\n"
-        "4. Do not include any control characters\n"
+        "Règles de formatage importantes:\n"
+        "1. Fournissez UNIQUEMENT l'objet JSON, aucun texte supplémentaire\n"
+        "2. Assurez-vous que tous les caractères spéciaux dans le texte d'analyse sont correctement retranscrits\n"
+        "3. Le champ "analysis" doit être une seule ligne avec des nouvelles lignes représentées par \\n\n"
+        "4. N'ajoutez aucun caractère de contrôle\n"
 
     """
+
 
     IDEAL_PROMPT = """
         After providing all your analysis steps, summarize your analysis and and state “Factuality: ” and a score from 0 to 1,

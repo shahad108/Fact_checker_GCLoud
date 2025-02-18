@@ -139,15 +139,35 @@ class GoogleWebSearchService(WebSearchServiceInterface):
 
                 if hasattr(source, "domain") and source.domain and source.domain.description:
                     source_info.append(f"Domain Info: {source.domain.description}")
-                    source_info.append(f"Domain Reliability: {'Reliable' if source.domain.is_reliable else 'Unreliable'}")
+                    # source_info.append(f"Domain Reliability: {'Reliable' if source.domain.is_reliable else 'Unreliable'}")
 
                 formatted_sources.append("\n".join(source_info))
 
             return "\n\n".join(formatted_sources)
         
         elif language == "french":
-            #TODO Add the logic here in French
-            return "Il n'y a pas des sources"
+            if not sources:
+                return "Il n'y a pas des sources."
+
+            formatted_sources = []
+            for i, source in enumerate(sources, 1):
+                source_info = [
+                    f"Source {i}:",
+                    f"Titre: {source.title}",
+                    f"URL: {source.url}",
+                    f"Index de crédibilité: {source.credibility_score:.2f}"
+                    if source.credibility_score is not None
+                    else "Index de crédibilité: N/A",
+                    f"Extrait: {source.snippet}",
+                ]
+
+
+                if hasattr(source, "domain") and source.domain and source.domain.description:
+                    source_info.append(f"Informations sur le domaine: {source.domain.description}")
+
+                formatted_sources.append("\n".join(source_info))
+
+            return "\n\n".join(formatted_sources)
         else: 
             raise ValidationError("Claim Language is invalid")
         
