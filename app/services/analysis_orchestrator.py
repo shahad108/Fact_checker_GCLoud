@@ -99,8 +99,6 @@ class AnalysisOrchestrator:
 
                 main_agent_message = response.text
 
-                logging.info(main_agent_message)
-
                 assert main_agent_message is not None, (
                     "Invalid Main Agent API response:",
                     response,
@@ -648,7 +646,7 @@ class AnalysisOrchestrator:
             match = re.search(r"^\s*REASON:\s*(.*?)\s*SEARCH:\s+(.+)$", assistant_response, re.DOTALL | re.MULTILINE)
         elif language == "french":
             #TODO replace once French Prompt is settled
-            match = re.search(r"^\s*REASON:\s*(.*?)\s*SEARCH:\s+(.+)$", assistant_response, re.DOTALL | re.MULTILINE)
+            match = re.search(r"^\s*REASON\s*:\s*(.*?)\s*SEARCH\s*:\s+(.+)$", assistant_response, re.DOTALL | re.MULTILINE)
         else:
             raise ValidationError("Claim Language is invalid")
         
