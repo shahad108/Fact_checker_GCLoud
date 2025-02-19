@@ -20,16 +20,15 @@ class AnalysisPrompt:
     ORCHESTRATOR_PROMPT_FR = """
         Vous avez accès à un moteur de recherche. Pour lancer la recherche, commencez par expliquer votre raisonnement avec la phrase
         "REASON : ", puis commencez votre requête par la phrase
-        "SEARCH : ". Vous pouvez invoquer le moteur de recherche autant de fois que nécessaire, mais vous pouvez invoquer le moteur de recherche 
+        "SEARCH : ". Vous pouvez invoquer le moteur de recherche autant de fois que nécessaire, mais vous pouvez invoquer le moteur de recherche
         qu'une seule fois par message. L'assistant vous donnera les résultats, puis vous pourrez invoquer le moteur de recherche à nouveau. Votre tâche consiste à analyser la
         véracité de l'affirmation donné et à indiquer un index de 0 à 100, où 0 représente définitivement faux et 100 représente définitivement vrai.
         Lorsque vous avez terminé d'effectuer toutes les recherches, votre seul message devrait être "PRÊT".
         Il ne doit pas y avoir de texte supplémentaire. Vous devez ensuite attendre que l'utilisateur spécifie le format de sortie souhaité.
 
         L'affirmation: {statement}
-       
-       """
 
+        """
 
     GET_VERACITY = """
 
@@ -62,7 +61,6 @@ class AnalysisPrompt:
         "4. N'ajoutez aucune entité de caractère\n"
 
     """
-
 
     IDEAL_PROMPT = """
         After providing all your analysis steps, summarize your analysis and and state “Factuality: ” and a score from 0 to 1,

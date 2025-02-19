@@ -73,7 +73,9 @@ class AnalysisOrchestrator:
         self._web_search = web_search_service
         self._analysis_state = AnalysisState()
 
-    async def _generate_analysis(self, claim_text: str, context: str, language: str) -> AsyncGenerator[Dict[str, Any], None]:
+    async def _generate_analysis(
+        self, claim_text: str, context: str, language: str
+    ) -> AsyncGenerator[Dict[str, Any], None]:
         """Generate analysis for a claim with web search and source management."""
         try:
             initial_analysis = Analysis(
@@ -107,7 +109,7 @@ class AnalysisOrchestrator:
                 # logging.info(main_agent_message)
                 # If search is requested in a message, truncate that message
                 # up to the search request. (Discard anything after the query.)
-                
+
                 search_request_match = self._extract_search_query_or_none(main_agent_message, language)
                 if search_request_match is not None:
                     initial_search = Search(
@@ -127,7 +129,7 @@ class AnalysisOrchestrator:
 
                     search_response = self._web_search.format_sources_for_prompt(sources, language)
 
-                    if language == "english" :
+                    if language == "english":
                         messages += [
                             LLMMessage(role="assistant", content=main_agent_message),
                             LLMMessage(role="user", content=f"Search result: {search_response}"),
@@ -135,18 +137,24 @@ class AnalysisOrchestrator:
                     elif language == "french":
                         messages += [
                             LLMMessage(role="assistant", content=main_agent_message),
-                            #TODO Translate this
-                            LLMMessage(role="user", content=f"Résultat(s) de la recherche sur le Web: {search_response}"),
+                            # TODO Translate this
+                            LLMMessage(
+                                role="user", content=f"Résultat(s) de la recherche sur le Web: {search_response}"
+                            ),
                         ]
-                    else :
+                    else:
                         raise ValidationError("Claim Language is invalid")
 
                     continue
                 else:
                     messages += [LLMMessage(role="assistant", content=main_agent_message)]
 
-                #TODO once the French prompt is settled
-                if main_agent_message.strip().lower().endswith("ready") or main_agent_message.strip().lower().endswith("prêt") or main_agent_message.strip().lower().endswith("prête"):
+                # TODO once the French prompt is settled
+                if (
+                    main_agent_message.strip().lower().endswith("ready")
+                    or main_agent_message.strip().lower().endswith("prêt")
+                    or main_agent_message.strip().lower().endswith("prête")
+                ):
                     break
 
             source_credibility = self._web_search.calculate_overall_credibility(all_sources)
@@ -166,9 +174,9 @@ class AnalysisOrchestrator:
             logger.debug(f"Sources for all searches to be analyzed {sources_text}")
             yield {"type": "status", "content": "Analyzing claim with gathered sources..."}
 
-            if language == "english": 
+            if language == "english":
                 messages += [LLMMessage(role="user", content=AnalysisPrompt.GET_VERACITY)]
-            elif language == "french": 
+            elif language == "french":
                 messages += [LLMMessage(role="user", content=AnalysisPrompt.GET_VERACITY_FR)]
 
             analysis_text = []
@@ -207,7 +215,7 @@ class AnalysisOrchestrator:
 
                         veracity_score = max(0, min(100, veracity_score))
 
-                        current_analysis.veracity_score = float(veracity_score)/100
+                        current_analysis.veracity_score = float(veracity_score) / 100
                         current_analysis.analysis_text = analysis_content
                         current_analysis.status = AnalysisStatus.completed.value
                         current_analysis.updated_at = datetime.now(UTC)
@@ -236,7 +244,7 @@ class AnalysisOrchestrator:
                                 veracity_score = int(veracity_match.group(1))
                                 analysis_content = analysis_match.group(1)
 
-                                current_analysis.veracity_score = float(veracity_score)/100
+                                current_analysis.veracity_score = float(veracity_score) / 100
                                 current_analysis.analysis_text = analysis_content
                                 current_analysis.status = AnalysisStatus.completed.value
                                 current_analysis.updated_at = datetime.now(UTC)
@@ -623,7 +631,7 @@ class AnalysisOrchestrator:
 
         if language == "english":
             return AnalysisPrompt.ORCHESTRATOR_PROMPT.format(statement=statement)
-        elif language == "french": 
+        elif language == "french":
             return AnalysisPrompt.ORCHESTRATOR_PROMPT_FR.format(statement=statement)
         else:
             raise ValidationError("Claim Language is invalid")
@@ -645,11 +653,13 @@ class AnalysisOrchestrator:
         if language == "english":
             match = re.search(r"^\s*REASON:\s*(.*?)\s*SEARCH:\s+(.+)$", assistant_response, re.DOTALL | re.MULTILINE)
         elif language == "french":
-            #TODO replace once French Prompt is settled
-            match = re.search(r"^\s*REASON\s*:\s*(.*?)\s*SEARCH\s*:\s+(.+)$", assistant_response, re.DOTALL | re.MULTILINE)
+            # TODO replace once French Prompt is settled
+            match = re.search(
+                r"^\s*REASON\s*:\s*(.*?)\s*SEARCH\s*:\s+(.+)$", assistant_response, re.DOTALL | re.MULTILINE
+            )
         else:
             raise ValidationError("Claim Language is invalid")
-        
+
         if match is None:
             return None
         return _KeywordExtractionOutput(

@@ -144,7 +144,7 @@ class GoogleWebSearchService(WebSearchServiceInterface):
                 formatted_sources.append("\n".join(source_info))
 
             return "\n\n".join(formatted_sources)
-        
+
         elif language == "french":
             if not sources:
                 return "Il n'y a pas des sources."
@@ -161,16 +161,14 @@ class GoogleWebSearchService(WebSearchServiceInterface):
                     f"Extrait: {source.snippet}",
                 ]
 
-
                 if hasattr(source, "domain") and source.domain and source.domain.description:
                     source_info.append(f"Informations sur le domaine: {source.domain.description}")
 
                 formatted_sources.append("\n".join(source_info))
 
             return "\n\n".join(formatted_sources)
-        else: 
+        else:
             raise ValidationError("Claim Language is invalid")
-        
 
     def calculate_overall_credibility(self, sources: List[SourceModel]) -> float:
         """Calculate overall credibility score for a set of sources."""
