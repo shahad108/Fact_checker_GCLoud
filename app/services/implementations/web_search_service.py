@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 from app.core.config import settings
 from sqlalchemy.exc import IntegrityError
 
+from app.core.exceptions import ValidationError
 from app.models.database.models import SourceModel
 from app.services.interfaces.web_search_service import WebSearchServiceInterface
 from app.repositories.implementations.source_repository import SourceRepository
@@ -120,28 +121,54 @@ class GoogleWebSearchService(WebSearchServiceInterface):
 
     def format_sources_for_prompt(self, sources: List[SourceModel], language: str = "english") -> str:
         """Format sources into a string for the LLM prompt."""
-        if not sources:
-            return "No reliable sources found."
+        if language == "english":
+            if not sources:
+                return "No reliable sources found."
 
-        formatted_sources = []
-        for i, source in enumerate(sources, 1):
-            source_info = [
-                f"Source {i}:",
-                f"Title: {source.title}",
-                f"URL: {source.url}",
-                f"Credibility Score: {source.credibility_score:.2f}"
-                if source.credibility_score is not None
-                else "Credibility Score: N/A",
-                f"Excerpt: {source.snippet}",
-            ]
+            formatted_sources = []
+            for i, source in enumerate(sources, 1):
+                source_info = [
+                    f"Source {i}:",
+                    f"Title: {source.title}",
+                    f"URL: {source.url}",
+                    f"Credibility Score: {source.credibility_score:.2f}"
+                    if source.credibility_score is not None
+                    else "Credibility Score: N/A",
+                    f"Excerpt: {source.snippet}",
+                ]
 
-            if hasattr(source, "domain") and source.domain and source.domain.description:
-                source_info.append(f"Domain Info: {source.domain.description}")
-                source_info.append(f"Domain Reliability: {'Reliable' if source.domain.is_reliable else 'Unreliable'}")
+                if hasattr(source, "domain") and source.domain and source.domain.description:
+                    source_info.append(f"Domain Info: {source.domain.description}")
+                    # source_info.append(f"Domain Reliability: {'Reliable' if source.domain.is_reliable else 'Unreliable'}")
 
-            formatted_sources.append("\n".join(source_info))
+                formatted_sources.append("\n".join(source_info))
 
-        return "\n\n".join(formatted_sources)
+            return "\n\n".join(formatted_sources)
+
+        elif language == "french":
+            if not sources:
+                return "Il n'y a pas des sources."
+
+            formatted_sources = []
+            for i, source in enumerate(sources, 1):
+                source_info = [
+                    f"Source {i}:",
+                    f"Titre: {source.title}",
+                    f"URL: {source.url}",
+                    f"Index de crédibilité: {source.credibility_score:.2f}"
+                    if source.credibility_score is not None
+                    else "Index de crédibilité: N/A",
+                    f"Extrait: {source.snippet}",
+                ]
+
+                if hasattr(source, "domain") and source.domain and source.domain.description:
+                    source_info.append(f"Informations sur le domaine: {source.domain.description}")
+
+                formatted_sources.append("\n".join(source_info))
+
+            return "\n\n".join(formatted_sources)
+        else:
+            raise ValidationError("Claim Language is invalid")
 
     def calculate_overall_credibility(self, sources: List[SourceModel]) -> float:
         """Calculate overall credibility score for a set of sources."""

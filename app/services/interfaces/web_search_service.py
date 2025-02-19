@@ -28,7 +28,7 @@ class WebSearchServiceInterface(ABC):
         pass
 
     @abstractmethod
-    def format_sources_for_prompt(self, sources: List[SourceModel]) -> str:
+    def format_sources_for_prompt(self, sources: List[SourceModel], language: str = "english") -> str:
         pass
 
     @abstractmethod
