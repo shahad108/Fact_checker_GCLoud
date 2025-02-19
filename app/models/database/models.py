@@ -111,11 +111,7 @@ class ClaimModel(Base):
     status: Mapped[ClaimStatus] = mapped_column(
         SQLEnum(ClaimStatus, name="claim_status"), default=ClaimStatus.pending, nullable=False
     )
-<<<<<<< HEAD
     language: Mapped[str] = mapped_column(Text, nullable=False, server_default="english")
-=======
-    language: Mapped[str] = mapped_column(Text, nullable=False, server_default='english')
->>>>>>> 13111ad (Local migration script rewrite working)
 
     user: Mapped["UserModel"] = relationship(back_populates="claims")
     analyses: Mapped[List["AnalysisModel"]] = relationship(back_populates="claim", cascade="all, delete-orphan")
@@ -248,17 +244,11 @@ class FeedbackModel(Base):
 
 class ClaimConversationModel(Base):
     conversation_id: Mapped[UUID] = mapped_column(
-<<<<<<< HEAD
         UUID(as_uuid=True), ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True
     )
     claim_id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("claims.id", ondelete="CASCADE"), nullable=False, index=True
     )
-=======
-        UUID(as_uuid=True), ForeignKey("conversations.id", ondelete='CASCADE'), nullable=False, index=True
-    )
-    claim_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("claims.id", ondelete='CASCADE'), nullable=False, index=True)
->>>>>>> 13111ad (Local migration script rewrite working)
     start_time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )
@@ -280,11 +270,7 @@ class ClaimConversationModel(Base):
 class MessageModel(Base):
     conversation_id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True),
-<<<<<<< HEAD
         ForeignKey("conversations.id", ondelete="CASCADE"),
-=======
-        ForeignKey("conversations.id", ondelete='CASCADE'),
->>>>>>> 13111ad (Local migration script rewrite working)
         nullable=True,
         index=True,
     )
@@ -296,31 +282,19 @@ class MessageModel(Base):
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )
     claim_id: Mapped[Optional[UUID]] = mapped_column(
-<<<<<<< HEAD
         UUID(as_uuid=True), ForeignKey("claims.id", ondelete="SET NULL"), nullable=True, index=True
     )
     analysis_id: Mapped[Optional[UUID]] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("analysis.id", ondelete="SET NULL"),
-=======
-        UUID(as_uuid=True), ForeignKey("claims.id", ondelete='SET NULL'), nullable=True, index=True
-    )
-    analysis_id: Mapped[Optional[UUID]] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("analysis.id", ondelete='SET NULL'),
->>>>>>> 13111ad (Local migration script rewrite working)
         nullable=True,
         index=True,
     )
     claim_conversation_id: Mapped[Optional[UUID]] = mapped_column(
-<<<<<<< HEAD
         UUID(as_uuid=True),
         ForeignKey("claim_conversations.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
-=======
-        UUID(as_uuid=True), ForeignKey("claim_conversations.id" , ondelete='SET NULL'), nullable=True, index=True, 
->>>>>>> 13111ad (Local migration script rewrite working)
     )
 
     conversation: Mapped["ConversationModel"] = relationship(back_populates="messages")
