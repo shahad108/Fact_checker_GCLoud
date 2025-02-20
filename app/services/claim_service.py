@@ -1,5 +1,4 @@
 from datetime import datetime, UTC
-import logging
 from typing import List, Optional, Tuple
 from uuid import UUID, uuid4
 
@@ -35,7 +34,7 @@ class ClaimService:
         claim.status = status
         claim.updated_at = datetime.now(UTC)
         return await self._claim_repo.update(claim)
-    
+
     async def update_claim_embedding(self, claim_id: UUID, embedding: List[float], user_id: UUID) -> Claim:
         """Update claim status."""
         claim = await self.get_claim(claim_id, user_id)

@@ -16,7 +16,7 @@ from sqlalchemy import (
     ForeignKey,
     text,
     ARRAY,
-    DOUBLE_PRECISION
+    DOUBLE_PRECISION,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 

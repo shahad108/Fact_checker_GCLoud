@@ -17,10 +17,12 @@ class ClaimStatusUpdate(BaseModel):
 
     status: str
 
+
 class ClaimEmbeddingUpdate(BaseModel):
     """Schema for updating claim status."""
 
     embedding: List[float] = None
+
 
 class ClaimRead(BaseModel):
     """Schema for reading a claim."""
