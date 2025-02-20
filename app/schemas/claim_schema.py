@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from typing import List
+from typing import Optional, List
 from datetime import datetime
 from uuid import UUID
 
@@ -17,6 +17,10 @@ class ClaimStatusUpdate(BaseModel):
 
     status: str
 
+class ClaimEmbeddingUpdate(BaseModel):
+    """Schema for updating claim status."""
+
+    embedding: List[float] = None
 
 class ClaimRead(BaseModel):
     """Schema for reading a claim."""
@@ -29,6 +33,7 @@ class ClaimRead(BaseModel):
     language: str
     created_at: datetime
     updated_at: datetime
+    embedding: Optional[List[float]]
 
     model_config = ConfigDict(from_attributes=True)
 

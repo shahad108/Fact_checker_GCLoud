@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
+from typing import Optional, List
 
 from app.models.database.models import ClaimModel, ClaimStatus
 
@@ -17,6 +18,7 @@ class Claim:
     language: str
     created_at: datetime
     updated_at: datetime
+    embedding: Optional[List[float]] = None
 
     @classmethod
     def from_model(cls, model: "ClaimModel") -> "Claim":
@@ -28,6 +30,7 @@ class Claim:
             context=model.context,
             status=ClaimStatus(model.status),
             language=model.language,
+            embedding=model.embedding,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
@@ -41,4 +44,5 @@ class Claim:
             context=self.context,
             status=ClaimStatus(self.status).value,
             language=self.language,
+            embedding=self.embedding,
         )
