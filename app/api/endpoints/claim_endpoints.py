@@ -21,7 +21,10 @@ async def create_claim(
     """Create a new claim for the authenticated user."""
     try:
         claim = await claim_service.create_claim(
-            user_id=current_user.id, claim_text=data.claim_text, context=data.context, language=data.language
+            user_id=current_user.id,
+            claim_text=data.claim_text,
+            context=data.context,
+            language=data.language,
         )
         return ClaimRead.model_validate(claim)
     except Exception as e:

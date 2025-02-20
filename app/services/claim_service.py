@@ -25,12 +25,20 @@ class ClaimService:
             created_at=now,
             updated_at=now,
         )
+
         return await self._claim_repo.create(claim)
 
     async def update_claim_status(self, claim_id: UUID, status: ClaimStatus, user_id: UUID) -> Claim:
         """Update claim status."""
         claim = await self.get_claim(claim_id, user_id)
         claim.status = status
+        claim.updated_at = datetime.now(UTC)
+        return await self._claim_repo.update(claim)
+
+    async def update_claim_embedding(self, claim_id: UUID, embedding: List[float], user_id: UUID) -> Claim:
+        """Update claim status."""
+        claim = await self.get_claim(claim_id, user_id)
+        claim.embedding = embedding
         claim.updated_at = datetime.now(UTC)
         return await self._claim_repo.update(claim)
 

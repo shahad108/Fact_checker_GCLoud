@@ -23,6 +23,7 @@ class ClaimRepository(BaseRepository[ClaimModel, Claim], ClaimRepositoryInterfac
             claim_text=claim.claim_text,
             context=claim.context,
             language=claim.language,
+            embedding=claim.embedding,
             status=ClaimStatus(claim.status).value,
         )
 
@@ -33,6 +34,7 @@ class ClaimRepository(BaseRepository[ClaimModel, Claim], ClaimRepositoryInterfac
             claim_text=model.claim_text,
             context=model.context,
             language=model.language,
+            embedding=model.embedding,
             status=ClaimStatus(model.status),
             created_at=model.created_at,
             updated_at=model.updated_at,

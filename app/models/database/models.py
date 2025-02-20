@@ -16,6 +16,7 @@ from sqlalchemy import (
     ForeignKey,
     text,
     ARRAY,
+    DOUBLE_PRECISION,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -112,6 +113,8 @@ class ClaimModel(Base):
         SQLEnum(ClaimStatus, name="claim_status"), default=ClaimStatus.pending, nullable=False
     )
     language: Mapped[str] = mapped_column(Text, nullable=False, server_default="english")
+
+    embedding: Mapped[list[float]] = mapped_column(ARRAY(DOUBLE_PRECISION), nullable=True)
 
     user: Mapped["UserModel"] = relationship(back_populates="claims")
     analyses: Mapped[List["AnalysisModel"]] = relationship(back_populates="claim", cascade="all, delete-orphan")
