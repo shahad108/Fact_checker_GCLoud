@@ -100,6 +100,7 @@ requests==2.32.3
 requests-toolbelt==1.0.0
 rich==13.9.1
 rsa==4.9
+sentence-transformers==3.4.1
 shapely==2.0.6
 shellingham==1.5.4
 six==1.16.0
