@@ -24,6 +24,8 @@ from app.services.analysis_orchestrator import AnalysisOrchestrator
 from app.services.claim_conversation_service import ClaimConversationService
 from app.services.implementations.web_search_service import GoogleWebSearchService
 from app.services.interfaces.web_search_service import WebSearchServiceInterface
+from app.services.implementations.embedding_generator import EmbeddingGenerator
+from app.services.interfaces.embedding_generator import EmbeddingGeneratorInterface
 from app.services.user_service import UserService
 from app.services.claim_service import ClaimService
 from app.services.analysis_service import AnalysisService
@@ -80,6 +82,10 @@ async def get_search_repository(session: Session = Depends(get_db)) -> SearchRep
 
 async def get_feedback_repository(session: Session = Depends(get_db)) -> FeedbackRepository:
     return FeedbackRepository(session)
+
+
+async def get_embedding_generator() -> EmbeddingGeneratorInterface:
+    return EmbeddingGenerator()
 
 
 async def get_user_service(user_repository: UserRepository = Depends(get_user_repository)) -> UserService:
