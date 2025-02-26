@@ -149,7 +149,6 @@ class AnalysisOrchestrator:
                 else:
                     messages += [LLMMessage(role="assistant", content=main_agent_message)]
 
-                # TODO once the French prompt is settled
                 if (
                     main_agent_message.strip().lower().endswith("ready")
                     or main_agent_message.strip().lower().endswith("prêt")
@@ -180,7 +179,7 @@ class AnalysisOrchestrator:
                 messages += [LLMMessage(role="user", content=AnalysisPrompt.GET_VERACITY_FR)]
 
             analysis_text = []
-            logger.info(messages)
+            logger.debug(messages)
             async for chunk in self._llm.generate_stream(messages):
                 if not chunk.is_complete:
                     analysis_text.append(chunk.text)
@@ -208,7 +207,7 @@ class AnalysisOrchestrator:
 
                         response_data = json.loads(cleaned_text)
 
-                        logger.info(response_data)
+                        logger.debug(response_data)
 
                         veracity_score = int(response_data.get("veracity_score", 0))
                         analysis_content = str(response_data.get("analysis", "No analysis provided"))

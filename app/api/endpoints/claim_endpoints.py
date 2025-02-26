@@ -62,7 +62,6 @@ async def get_claim(
 ) -> ClaimRead:
     """Get a specific claim by ID."""
     try:
-        print("entered")
         claim = await claim_service.get_claim(claim_id=claim_id, user_id=current_user.id)
         return ClaimRead.model_validate(claim)
     except NotFoundException:

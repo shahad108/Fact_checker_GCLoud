@@ -32,7 +32,7 @@ class AnalysisPrompt:
 
     GET_VERACITY = """
 
-    "After providing all your analysis steps, summarize your analysis and state a score from 0 to 1,
+    "After providing all your analysis steps, summarize your analysis and state a score from 0 to 100,
     where 0 represents definitively false and 100 represents definitively true, in the following JSON format:\n"
         "{\n"
         '    "veracity_score": <integer between 0 and 100>,\n'
