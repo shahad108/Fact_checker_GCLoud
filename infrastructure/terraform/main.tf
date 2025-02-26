@@ -318,7 +318,7 @@ resource "kubernetes_deployment" "misinformation_mitigation_api" {
               path = "/v1/health"
               port = 8001
             }
-            initial_delay_seconds = 10
+            initial_delay_seconds = 30
             period_seconds        = 5
           }
         }
