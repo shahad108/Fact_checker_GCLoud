@@ -2,6 +2,7 @@ from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 from uuid import UUID
+from datetime import datetime
 
 
 class ClaimCreate(BaseModel):
@@ -47,3 +48,7 @@ class ClaimList(BaseModel):
     total: int
     limit: int
     offset: int
+
+class WordCloudRequest(BaseModel):
+    start_date: datetime
+    end_date: datetime
