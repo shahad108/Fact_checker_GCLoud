@@ -122,7 +122,7 @@ async def update_claim_embedding(
         )
 
 
-@router.get("/wordcloud/generate", response_model=dict, summary="Get the JSON for plotting a word cloud")
+@router.post("/wordcloud/generate", response_model=dict, summary="Get the JSON for plotting a word cloud")
 async def generate_word_cloud(
     data: WordCloudRequest,
     claim_service: ClaimService = Depends(get_claim_service),
