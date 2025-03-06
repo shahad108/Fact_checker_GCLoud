@@ -78,14 +78,15 @@ class ClaimRepository(BaseRepository[ClaimModel, Claim], ClaimRepositoryInterfac
             logger.exception("Error updating claim status")
             raise
 
-    async def get_claims_in_date_range(self, start_date: datetime, end_date: datetime) -> List[Claim]:
+    async def get_claims_in_date_range(self, start_date: datetime, end_date: datetime, language: str) -> List[Claim]:
         stmt = (
             select(self._model_class)
             .where(
                 and_(
                     self._model_class.created_at >= start_date,
                     self._model_class.created_at <= end_date,
-                    self._model_class.status == ClaimStatus.analyzed 
+                    self._model_class.status == ClaimStatus.analyzed,
+                    self._model_class.language == language
                 )
             )
         )

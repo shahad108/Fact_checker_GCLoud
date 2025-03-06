@@ -42,5 +42,5 @@ class ClaimRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    def get_claims_in_date_range(self, start_date: datetime, end_date: datetime):
+    def get_claims_in_date_range(self, start_date: datetime, end_date: datetime, language: str):
         pass

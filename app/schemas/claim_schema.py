@@ -52,3 +52,4 @@ class ClaimList(BaseModel):
 class WordCloudRequest(BaseModel):
     start_date: datetime
     end_date: datetime
+    language: str = "english"
