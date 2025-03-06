@@ -1,20 +1,18 @@
 from datetime import datetime, UTC
 from typing import List, Optional, Tuple
 from uuid import UUID, uuid4
-from datetime import datetime
 from wordcloud import WordCloud
 import json
 import plotly.graph_objects as go
-import numpy as np
-from io import BytesIO
-from PIL import Image
 import logging
 
 from app.models.database.models import ClaimStatus
 from app.models.domain.claim import Claim
 from app.repositories.implementations.claim_repository import ClaimRepository
 from app.core.exceptions import NotFoundException, NotAuthorizedException
+
 logger = logging.getLogger(__name__)
+
 
 class ClaimService:
     def __init__(self, claim_repository: ClaimRepository):
@@ -66,30 +64,26 @@ class ClaimService:
     ) -> Tuple[List[Claim], int]:
         """List claims for a user with pagination."""
         return await self._claim_repo.get_user_claims(user_id=user_id, status=status, limit=limit, offset=offset)
-    
+
     async def list_time_bound_claims(
         self, start_date: datetime, end_date: datetime, language: str = "english"
     ) -> List[Claim]:
         """List claims for a specific date range."""
-        return await self._claim_repo.get_claims_in_date_range(start_date=start_date, end_date=end_date, language=language)
-    
-    async def generate_word_cloud(
-        self, claims: List[Claim]
-    ) -> str:
+        return await self._claim_repo.get_claims_in_date_range(
+            start_date=start_date, end_date=end_date, language=language
+        )
+
+    async def generate_word_cloud(self, claims: List[Claim]) -> str:
         claim_texts = list(map(lambda claim: claim.claim_text, claims))
 
         text = " ".join(claim_texts)
         wordcloud = WordCloud().generate(text)
 
         image = wordcloud.to_array()
-        fig = go.Figure(
-            go.Image(z=image)
-        )
+        fig = go.Figure(go.Image(z=image))
 
         fig.update_layout(
-            xaxis=dict(showgrid=False, zeroline=False),
-            yaxis=dict(showgrid=False, zeroline=False),
-            plot_bgcolor="white"
+            xaxis=dict(showgrid=False, zeroline=False), yaxis=dict(showgrid=False, zeroline=False), plot_bgcolor="white"
         )
         fig_json = fig.to_json()
         graph = json.loads(fig_json)

@@ -14,6 +14,7 @@ from app.services.interfaces.embedding_generator import EmbeddingGeneratorInterf
 router = APIRouter(prefix="/claims", tags=["claims"])
 logger = logging.getLogger(__name__)
 
+
 @router.post("/", response_model=ClaimRead, status_code=status.HTTP_201_CREATED, summary="Create a new claim")
 async def create_claim(
     data: ClaimCreate,
@@ -119,20 +120,23 @@ async def update_claim_embedding(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to update claim status: {str(e)}"
         )
-    
+
+
 @router.get("/wordcloud/generate", response_model=dict, summary="Get the JSON for plotting a word cloud")
-async def update_claim_embedding(
-        data: WordCloudRequest,
-        claim_service: ClaimService = Depends(get_claim_service),
+async def generate_word_cloud(
+    data: WordCloudRequest,
+    claim_service: ClaimService = Depends(get_claim_service),
 ) -> dict:
     """Generate and update a claim's embedding."""
     try:
-        claims = await claim_service.list_time_bound_claims(start_date=data.start_date, end_date=data.end_date, language=data.language)
+        claims = await claim_service.list_time_bound_claims(
+            start_date=data.start_date, end_date=data.end_date, language=data.language
+        )
         if len(claims) == 0:
             return {}
-        
+
         plot = await claim_service.generate_word_cloud(claims)
-        
+
         return plot
     except Exception as e:
         raise HTTPException(
