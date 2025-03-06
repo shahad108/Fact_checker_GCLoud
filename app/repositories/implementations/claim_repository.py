@@ -1,8 +1,9 @@
 import logging
 from typing import Optional, List, Tuple
 from uuid import UUID
-from sqlalchemy import select, func
+from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime
 
 from app.models.database.models import ClaimModel, ClaimStatus
 from app.models.domain.claim import Claim
@@ -76,3 +77,15 @@ class ClaimRepository(BaseRepository[ClaimModel, Claim], ClaimRepositoryInterfac
         except Exception:
             logger.exception("Error updating claim status")
             raise
+
+    async def get_claims_in_date_range(self, start_date: datetime, end_date: datetime, language: str) -> List[Claim]:
+        stmt = select(self._model_class).where(
+            and_(
+                self._model_class.created_at >= start_date,
+                self._model_class.created_at <= end_date,
+                self._model_class.status == ClaimStatus.analyzed,
+                self._model_class.language == language,
+            )
+        )
+        result = await self._session.execute(stmt)
+        return [self._to_domain(claim) for claim in result.scalars().all()]

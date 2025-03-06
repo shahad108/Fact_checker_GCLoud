@@ -47,3 +47,9 @@ class ClaimList(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class WordCloudRequest(BaseModel):
+    start_date: datetime
+    end_date: datetime
+    language: str = "english"

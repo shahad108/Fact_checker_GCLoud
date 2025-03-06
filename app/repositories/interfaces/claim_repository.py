@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Optional, List, Tuple
+from datetime import datetime
 from uuid import UUID
 from app.models.database.models import ClaimStatus
 from app.models.domain.claim import Claim
@@ -38,4 +39,8 @@ class ClaimRepositoryInterface(ABC):
     @abstractmethod
     async def update_status(self, claim_id: UUID, status: ClaimStatus) -> Optional[Claim]:
         """Update claim status."""
+        pass
+
+    @abstractmethod
+    def get_claims_in_date_range(self, start_date: datetime, end_date: datetime, language: str):
         pass
