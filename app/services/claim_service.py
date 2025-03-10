@@ -83,10 +83,10 @@ class ClaimService:
         fig = go.Figure(go.Image(z=image))
 
         fig.update_layout(
-            xaxis=dict(showgrid=False, zeroline=False, visible=False), 
+            xaxis=dict(showgrid=False, zeroline=False, visible=False),
             yaxis=dict(showgrid=False, zeroline=False, visible=False),
-            paper_bgcolor="white", 
-            plot_bgcolor="white"
+            paper_bgcolor="white",
+            plot_bgcolor="white",
         )
         fig_json = fig.to_json()
         graph = json.loads(fig_json)
