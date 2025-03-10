@@ -77,13 +77,16 @@ class ClaimService:
         claim_texts = list(map(lambda claim: claim.claim_text, claims))
 
         text = " ".join(claim_texts)
-        wordcloud = WordCloud().generate(text)
+        wordcloud = WordCloud(background_color="white", colormap="rainbow").generate(text)
 
         image = wordcloud.to_array()
         fig = go.Figure(go.Image(z=image))
 
         fig.update_layout(
-            xaxis=dict(showgrid=False, zeroline=False), yaxis=dict(showgrid=False, zeroline=False), plot_bgcolor="white"
+            xaxis=dict(showgrid=False, zeroline=False, visible=False), 
+            yaxis=dict(showgrid=False, zeroline=False, visible=False),
+            paper_bgcolor="white", 
+            plot_bgcolor="white"
         )
         fig_json = fig.to_json()
         graph = json.loads(fig_json)
