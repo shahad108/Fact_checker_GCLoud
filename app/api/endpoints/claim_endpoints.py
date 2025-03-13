@@ -142,3 +142,26 @@ async def generate_word_cloud(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to generate word cloud: {str(e)}"
         )
+
+
+@router.post("/clustering/generate", response_model=dict, summary="Get the JSON for plotting a clustering graph")
+async def generate_clustering_graph(
+    data: WordCloudRequest,
+    claim_service: ClaimService = Depends(get_claim_service),
+) -> dict:
+    """Generate and update a claim's embedding."""
+    try:
+        claims = await claim_service.list_time_bound_claims(
+            start_date=data.start_date, end_date=data.end_date, language=data.language
+        )
+        # logger.info(claims)
+        if len(claims) == 0:
+            return {}
+
+        plot = await claim_service.generate_clustering_graph(claims=claims, num_clusters=3)
+
+        return plot
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to generate clustering graph: {str(e)}"
+        )
