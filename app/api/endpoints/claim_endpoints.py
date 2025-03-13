@@ -143,6 +143,7 @@ async def generate_word_cloud(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to generate word cloud: {str(e)}"
         )
 
+
 @router.post("/clustering/generate", response_model=dict, summary="Get the JSON for plotting a clustering graph")
 async def generate_clustering_graph(
     data: WordCloudRequest,

@@ -6,11 +6,8 @@ import json
 import plotly.graph_objects as go
 import logging
 
-from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.cluster import KMeans
-import matplotlib.pyplot as plt
-import plotly.tools as tls
 import plotly.express as px
 import pandas as pd
 import numpy as np
@@ -103,7 +100,7 @@ class ClaimService:
         logger.debug("generated word cloud picture")
 
         return graph
-    
+
     async def generate_clustering_graph(self, claims: List[Claim], num_clusters: int) -> str:
 
         claim_embed = list(map(lambda claim: claim.embedding, filter(lambda c: c.embedding is not None, claims)))
@@ -113,12 +110,13 @@ class ClaimService:
 
         # Reduce embedding size
         X = np.array(claim_embed)
-        X_embedded = TSNE(n_components=2, learning_rate='auto',
-                        init='random', perplexity=3).fit_transform(X) # shape is [len(X) x 2]
+        X_embedded = TSNE(n_components=2, learning_rate="auto", init="random", perplexity=3).fit_transform(
+            X
+        )  # shape is [len(X) x 2]
         # to change the dimension size, change n_components
 
         # Do k-means clustering
-        kmeans = KMeans(n_clusters=num_clusters, random_state=0, n_init="auto").fit(X_embedded) 
+        kmeans = KMeans(n_clusters=num_clusters, random_state=0, n_init="auto").fit(X_embedded)
         # to change the number of clusters, change n_clusters above
 
         # kmeans_labels = kmeans.labels_
@@ -128,11 +126,14 @@ class ClaimService:
 
         # Create the scatter plot
         fig = px.scatter(
-            df, x='x', y='y', color=df['cluster'].astype(str), 
+            df,
+            x="x",
+            y="y",
+            color=df["cluster"].astype(str),
             title="t-SNE Visualization with KMeans Clusters",
             labels={"0": "t-SNE Dimension 1", "1": "t-SNE Dimension 2"},
             color_discrete_sequence=px.colors.qualitative.Set1,  # Custom color scheme
-            template="plotly_white"
+            template="plotly_white",
         )
 
         fig_json = fig.to_json()
