@@ -132,8 +132,6 @@ async def generate_word_cloud(
         claims = await claim_service.list_time_bound_claims(
             start_date=data.start_date, end_date=data.end_date, language=data.language
         )
-        if len(claims) == 0:
-            return {}
 
         plot = await claim_service.generate_word_cloud(claims)
 
@@ -155,8 +153,6 @@ async def generate_clustering_graph(
             start_date=data.start_date, end_date=data.end_date, language=data.language
         )
         # logger.info(claims)
-        if len(claims) == 0:
-            return {}
 
         plot = await claim_service.generate_clustering_graph(claims=claims, num_clusters=3)
 

@@ -82,6 +82,23 @@ class ClaimService:
     async def generate_word_cloud(self, claims: List[Claim]) -> str:
         claim_texts = list(map(lambda claim: claim.claim_text, claims))
 
+        if len(claim_texts) <= 0:
+            wordcloud = WordCloud(background_color="white", colormap="rainbow", margin=0).generate("Empty")
+
+            image = wordcloud.to_array()
+            fig = go.Figure(go.Image(z=image))
+
+            fig.update_layout(
+                xaxis=dict(showgrid=False, zeroline=False, visible=False),
+                yaxis=dict(showgrid=False, zeroline=False, visible=False),
+                paper_bgcolor="white",
+                plot_bgcolor="white",
+                margin=dict(l=20, r=20, t=20, b=20),
+            )
+            fig_json = fig.to_json()
+            graph = json.loads(fig_json)
+            return graph
+
         text = " ".join(claim_texts)
         wordcloud = WordCloud(background_color="white", colormap="rainbow", margin=0).generate(text)
 
@@ -93,6 +110,7 @@ class ClaimService:
             yaxis=dict(showgrid=False, zeroline=False, visible=False),
             paper_bgcolor="white",
             plot_bgcolor="white",
+            margin=dict(l=20, r=20, t=20, b=20),
         )
         fig_json = fig.to_json()
         graph = json.loads(fig_json)
@@ -106,37 +124,37 @@ class ClaimService:
         claim_embed = list(map(lambda claim: claim.embedding, filter(lambda c: c.embedding is not None, claims)))
 
         if len(claim_embed) < 3:
-            return "{}"
+            fig = go.Figure()
+            fig.update_layout(
+                title="t-SNE Visualization with KMeans Clusters",
+                xaxis_title="t-SNE Dimension 1",
+                yaxis_title="t-SNE Dimension 2",
+                template="plotly_white",
+            )
+            fig_json = fig.to_json()
+            graph = json.loads(fig_json)
+            return graph
+        else:
+            # Reduce embedding size
+            X = np.array(claim_embed)
+            X_embedded = TSNE(n_components=2, learning_rate="auto", init="random", perplexity=3).fit_transform(X)
+            kmeans = KMeans(n_clusters=num_clusters, random_state=0, n_init="auto").fit(X_embedded)
 
-        # Reduce embedding size
-        X = np.array(claim_embed)
-        X_embedded = TSNE(n_components=2, learning_rate="auto", init="random", perplexity=3).fit_transform(
-            X
-        )  # shape is [len(X) x 2]
-        # to change the dimension size, change n_components
+            df = pd.DataFrame(X_embedded, columns=["x", "y"])
+            df["cluster"] = kmeans.labels_  # Assign KMeans labels
 
-        # Do k-means clustering
-        kmeans = KMeans(n_clusters=num_clusters, random_state=0, n_init="auto").fit(X_embedded)
-        # to change the number of clusters, change n_clusters above
+            fig = px.scatter(
+                df,
+                x="x",
+                y="y",
+                color=df["cluster"].astype(str),
+                title="t-SNE Visualization with KMeans Clusters",
+                labels={"0": "t-SNE Dimension 1", "1": "t-SNE Dimension 2"},
+                color_discrete_sequence=px.colors.qualitative.Set1,  # Custom color scheme
+                template="plotly_white",
+            )
 
-        # kmeans_labels = kmeans.labels_
+            fig_json = fig.to_json()
+            graph = json.loads(fig_json)
 
-        df = pd.DataFrame(X_embedded, columns=["x", "y"])
-        df["cluster"] = kmeans.labels_  # Assign KMeans labels
-
-        # Create the scatter plot
-        fig = px.scatter(
-            df,
-            x="x",
-            y="y",
-            color=df["cluster"].astype(str),
-            title="t-SNE Visualization with KMeans Clusters",
-            labels={"0": "t-SNE Dimension 1", "1": "t-SNE Dimension 2"},
-            color_discrete_sequence=px.colors.qualitative.Set1,  # Custom color scheme
-            template="plotly_white",
-        )
-
-        fig_json = fig.to_json()
-        graph = json.loads(fig_json)
-
-        return graph
+            return graph
