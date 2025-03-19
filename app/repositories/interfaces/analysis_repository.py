@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Optional, List, Tuple
+from datetime import datetime
 from uuid import UUID
 from app.models.database.models import AnalysisStatus
 from app.models.domain.analysis import Analysis
@@ -33,4 +34,8 @@ class AnalysisRepositoryInterface(ABC):
     @abstractmethod
     async def get_recent_analyses(self, limit: int = 50, offset: int = 0) -> Tuple[List[Analysis], int]:
         """Get recent analyses with pagination."""
+        pass
+
+    @abstractmethod
+    def get_analysis_in_date_range(self, start_date: datetime, end_date: datetime):
         pass

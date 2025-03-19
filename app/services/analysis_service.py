@@ -1,12 +1,15 @@
 from datetime import datetime, UTC
 from typing import List, Optional, Tuple
 from uuid import UUID, uuid4
+import logging
 
 from app.models.database.models import AnalysisStatus
 from app.models.domain.analysis import Analysis
 from app.repositories.implementations.analysis_repository import AnalysisRepository
 from app.repositories.implementations.claim_repository import ClaimRepository
 from app.core.exceptions import NotFoundException
+
+logger = logging.getLogger(__name__)
 
 
 class AnalysisService:
@@ -82,3 +85,24 @@ class AnalysisService:
     async def get_recent_analyses(self, limit: int = 50, offset: int = 0) -> Tuple[List[Analysis], int]:
         """Get recent analyses with pagination."""
         return await self._analysis_repo.get_recent_analyses(limit=limit, offset=offset)
+
+    async def get_analysis_list(self, start_date: datetime, end_date: datetime, language: str) -> List[Analysis]:
+        """Get analysis by ID."""
+
+        analysis_list = await self._analysis_repo.get_analysis_in_date_range(start_date=start_date, end_date=end_date)
+
+        latest_analysis = {}
+
+        for analysis in analysis_list:
+            claim_id = analysis.claim_id
+            if claim_id not in latest_analysis or analysis.updated_at > latest_analysis[claim_id].updated_at:
+                latest_analysis[claim_id] = analysis
+
+        # result = list(latest_analysis.values())
+        result = [
+            analysis
+            for analysis in latest_analysis.values()
+            if (await self._claim_repo.get(analysis.claim_id)).language == language
+        ]
+
+        return result

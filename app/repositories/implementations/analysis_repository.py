@@ -1,8 +1,9 @@
 from typing import Optional, List
 from uuid import UUID
-from sqlalchemy import desc, select
+from sqlalchemy import desc, select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from datetime import datetime
 
 from app.models.database.models import AnalysisModel, AnalysisStatus
 from app.models.domain.analysis import Analysis
@@ -170,3 +171,14 @@ class AnalysisRepository(BaseRepository[AnalysisModel, Analysis]):
             )
         else:
             return self._to_domain(model)
+
+    async def get_analysis_in_date_range(self, start_date: datetime, end_date: datetime) -> List[Analysis]:
+        stmt = select(self._model_class).where(
+            and_(
+                self._model_class.created_at >= start_date,
+                self._model_class.created_at <= end_date,
+                self._model_class.status == AnalysisStatus.completed,
+            )
+        )
+        result = await self._session.execute(stmt)
+        return [self._to_domain(model) for model in result.scalars().all()]
