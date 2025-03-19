@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from typing import List
 from uuid import UUID
 import logging
+from datetime import datetime
 
 from app.api.dependencies import get_analysis_service, get_auth_middleware, get_orchestrator_service, get_current_user
 from app.core.auth.auth0_middleware import Auth0Middleware
@@ -95,3 +96,27 @@ async def get_claim_analyses(
     except Exception as e:
         logger.error("Could not find the analysis for the claim")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/avg/total", response_model=dict, summary="Get average reliability score for claims by language")
+async def get_claim(
+    start_date: datetime,
+    end_date: datetime,
+    language: str = "english",
+    analysis_service: AnalysisService = Depends(get_analysis_service),
+) -> dict:
+    """Get average reliability score for claims by language."""
+    try:
+        analyses = await analysis_service.get_analysis_list(start_date=start_date, end_date=end_date, language=language)
+
+        if not analyses:
+            return {"avg_score": 0.0}  # Return 0 if the list is empty to avoid division by zero
+
+        total_score = sum(analysis.veracity_score for analysis in analyses)
+        average_score = total_score / len(analyses)
+
+        return {"avg_score": average_score}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to get analysis list: {str(e)}"
+        )

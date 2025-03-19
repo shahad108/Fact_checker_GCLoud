@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import Optional
 from uuid import UUID
 import logging
+from datetime import datetime
 
 from app.api.dependencies import get_claim_service, get_current_user, get_embedding_generator
 from app.models.database.models import ClaimStatus
@@ -160,4 +161,21 @@ async def generate_clustering_graph(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to generate clustering graph: {str(e)}"
+        )
+
+
+@router.get("/length/total", response_model=dict, summary="Get total claims by language")
+async def get_all_claim(
+    start_date: datetime,
+    end_date: datetime,
+    language: str = "english",
+    claim_service: ClaimService = Depends(get_claim_service),
+) -> dict:
+    """Get total claims by language."""
+    try:
+        claims = await claim_service.list_time_bound_claims(start_date=start_date, end_date=end_date, language=language)
+        return {"total_claims": len(claims)}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to get list of claim: {str(e)}"
         )
