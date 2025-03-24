@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     GOOGLE_SEARCH_API_KEY: str = ""
     GOOGLE_SEARCH_ENGINE_ID: str = ""
 
-    LLAMA_MODEL_NAME: str = "meta/llama-3.1-70b-instruct-maas"
+    LLAMA_MODEL_NAME: str = "meta/llama-3.3-70b-instruct-maas"
 
     AUTH0_DOMAIN: str = "veri-fact.ca.auth0.com"
     AUTH0_AUDIENCE: str = "https://veri-fact.ca.auth0.com/api/v2/"
