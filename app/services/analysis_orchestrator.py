@@ -196,11 +196,11 @@ class AnalysisOrchestrator:
                             .replace("\x1a", "")  # Remove SUB characters
                             .replace("\n", "")
                             .replace("\\'", "'")
-                            .replace('\\"', '"')
                             .replace("\t", "")
                         )
                         # Try to find the JSON object if there's additional text
                         try:
+                            logger.info(f"Debug: {cleaned_text}")
                             start_idx = cleaned_text.find("{")
                             end_idx = cleaned_text.rindex("}") + 1
                             if start_idx != -1 and end_idx != -1:
@@ -210,7 +210,7 @@ class AnalysisOrchestrator:
 
                         response_data = json.loads(cleaned_text)
 
-                        logger.debug(response_data)
+                        logger.info(response_data)
 
                         veracity_score = int(response_data.get("veracity_score", 0))
                         analysis_content = str(response_data.get("analysis", "No analysis provided"))
