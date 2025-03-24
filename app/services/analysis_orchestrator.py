@@ -189,15 +189,17 @@ class AnalysisOrchestrator:
 
                     try:
                         # Clean the text before parsing
+                        # fmt: off
                         cleaned_text = (
                             full_text.strip()
                             .replace("\r", "")  # Remove carriage returns
                             .replace("\x00", "")  # Remove null bytes
                             .replace("\x1a", "")  # Remove SUB characters
                             .replace("\n", "")
-                            .replace("\\'", "'")
+                            .replace("\\\'", "'")
                             .replace("\t", "")
                         )
+                        # fmt: on
                         # Try to find the JSON object if there's additional text
                         try:
                             start_idx = cleaned_text.find("{")
