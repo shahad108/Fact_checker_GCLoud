@@ -195,8 +195,8 @@ class AnalysisOrchestrator:
                             .replace("\x00", "")  # Remove null bytes
                             .replace("\x1a", "")  # Remove SUB characters
                             .replace("\n", "")
-                            .replace("\\\'", "'")
-                            .replace("\\\"", "\"")
+                            .replace("\\'", "'")
+                            .replace('\\"', '"')
                             .replace("\t", "")
                         )
                         # Try to find the JSON object if there's additional text
