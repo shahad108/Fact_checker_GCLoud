@@ -36,7 +36,9 @@ async def get_source(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to access this source")
 
 
-@router.get("/analysis/{analysis_id}", response_model=List[SourceRead], summary="Get analysis sources")
+@router.get(
+    "/analysis/{analysis_id}/all", response_model=List[SourceRead], summary="Get analysis sources, include duplicates"
+)
 async def get_analysis_sources(
     analysis_id: UUID,
     include_content: bool = Query(False, description="Include full source content in response"),
@@ -88,6 +90,51 @@ async def get_search_sources(
             search_id=search_id, user_id=current_user.id, include_content=include_content
         )
         return [SourceRead.model_validate(s) for s in sources]
+    except NotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except NotAuthorizedException:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to access these sources")
+    except Exception as e:
+        logger.error(f"Error getting sources: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve sources")
+
+
+@router.get("/analysis/{analysis_id}", response_model=List[SourceRead], summary="Get analysis sources that are unique")
+async def get_analysis_sources_unique(
+    analysis_id: UUID,
+    include_content: bool = Query(False, description="Include full source content in response"),
+    current_user: User = Depends(get_current_user),
+    source_service: SourceService = Depends(get_source_service),
+    search_service: SearchService = Depends(get_search_service),
+) -> List[SourceRead]:
+    """
+    Get all sources used in a specific analysis.
+    Verifies that the user has access to the analysis before returning sources.
+    """
+    # TODO include content does not do anything at the moment, it either needs to be removed or created
+    try:
+        searches = await search_service.get_analysis_searches(analysis_id=analysis_id, user_id=current_user.id)
+        sources = []
+        for search in searches:
+            temp = await source_service.get_search_sources_without_auth_check(
+                search_id=search.id, user_id=current_user.id, include_content=include_content
+            )
+            sources.append(temp)
+
+        flat_sources = [item for sublist in sources for item in sublist]
+
+        seen_urls = set()
+        unique_sources = []
+
+        for source in flat_sources:
+            if source.url not in seen_urls:
+                unique_sources.append(source)
+                seen_urls.add(source.url)
+
+        sorted_sources = sorted(
+            unique_sources, key=lambda x: (x.credibility_score is None, -(x.credibility_score or 0))
+        )
+        return [SourceRead.model_validate(s) for s in sorted_sources]
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except NotAuthorizedException:
