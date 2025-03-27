@@ -76,16 +76,6 @@ class GoogleWebSearchService(WebSearchServiceInterface):
                             if is_new:
                                 logger.info(f"Created new domain record for: {domain_name}")
 
-                            # existing_source = await self._get_existing_source(item["link"])
-
-                            # if existing_source:
-                            #     logger.info(f"Source already exists at {item["link"]}")
-                            # updated_source = await self._update_source_analysis(
-                            #     existing_source, search_id, domain.credibility_score
-                            # )
-                            # sources.append(updated_source)
-                            # logger.debug(f"Updated existing source for URL: {item['link']}")
-
                             source = await self._create_new_source(item, search_id, domain.id, domain.credibility_score)
                             if source:
                                 sources.append(source)
@@ -156,7 +146,6 @@ class GoogleWebSearchService(WebSearchServiceInterface):
 
                 if hasattr(source, "domain") and source.domain and source.domain.description:
                     source_info.append(f"Domain Info: {source.domain.description}")
-                    # source_info.append(f"Domain Reliability: {'Reliable' if source.domain.is_reliable else 'Unreliable'}")
 
                 formatted_sources.append("\n".join(source_info))
 
