@@ -211,7 +211,7 @@ class SourceModel(Base):
             "(credibility_score IS NULL OR (credibility_score >= 0 AND credibility_score <= 1))",
             name="check_source_credibility_score_range",
         ),
-        Index("idx_source_url_hash", text("md5(url)"), unique=True),
+        Index("ix_source_url_hash", text("md5(url)"), unique=False),
     )
 
 

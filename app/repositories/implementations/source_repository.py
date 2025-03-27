@@ -1,6 +1,6 @@
 from typing import Optional, List
 from uuid import UUID
-from sqlalchemy import select
+from sqlalchemy import select, desc
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,10 +18,11 @@ class SourceRepository(BaseRepository[SourceModel, Source]):
         query = (
             select(self._model_class)
             .where(self._model_class.url == url)
+            .order_by(desc(self._model_class.created_at))
             .options(selectinload(self._model_class.domain))
         )
         result = await self._session.execute(query)
-        return result.scalar_one_or_none()
+        return result.scalars().first()
 
     async def get_by_search(self, search_id: UUID, include_domain: bool = True) -> List[SourceModel]:
         query = select(self._model_class).where(self._model_class.search_id == search_id)

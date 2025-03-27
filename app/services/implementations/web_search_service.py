@@ -25,7 +25,7 @@ class GoogleWebSearchService(WebSearchServiceInterface):
         self.source_repository = source_repository
 
     async def search_and_create_sources(
-        self, claim_text: str, search_id: UUID, num_results: int = 5
+        self, claim_text: str, search_id: UUID, num_results: int = 5, language: str = "english"
     ) -> List[SourceModel]:
         """Search for sources and create or update records."""
         try:
@@ -36,6 +36,24 @@ class GoogleWebSearchService(WebSearchServiceInterface):
                 "num": min(num_results, 10),
                 "fields": "items(title,link,snippet)",
             }
+            if language == "english":
+                params = {
+                    "key": self.api_key,
+                    "cx": self.search_engine_id,
+                    "q": claim_text,
+                    "num": min(num_results, 10),
+                    "fields": "items(title,link,snippet)",
+                    "lr": "lang_en",
+                }
+            elif language == "french":
+                params = {
+                    "key": self.api_key,
+                    "cx": self.search_engine_id,
+                    "q": claim_text,
+                    "num": min(num_results, 10),
+                    "fields": "items(title,link,snippet)",
+                    "lr": "lang_fr",
+                }
 
             sources = []
             async with aiohttp.ClientSession() as session:
@@ -58,21 +76,10 @@ class GoogleWebSearchService(WebSearchServiceInterface):
                             if is_new:
                                 logger.info(f"Created new domain record for: {domain_name}")
 
-                            existing_source = await self._get_existing_source(item["link"])
-
-                            if existing_source:
-                                updated_source = await self._update_source_analysis(
-                                    existing_source, search_id, domain.credibility_score
-                                )
-                                sources.append(updated_source)
-                                logger.debug(f"Updated existing source for URL: {item['link']}")
-                            else:
-                                source = await self._create_new_source(
-                                    item, search_id, domain.id, domain.credibility_score
-                                )
-                                if source:
-                                    sources.append(source)
-                                    logger.debug(f"Created new source for URL: {item['link']}")
+                            source = await self._create_new_source(item, search_id, domain.id, domain.credibility_score)
+                            if source:
+                                sources.append(source)
+                                logger.debug(f"Created new source for URL: {item['link']}")
 
                         except Exception as e:
                             logger.error(f"Error processing search result: {str(e)}", exc_info=True)
@@ -139,7 +146,6 @@ class GoogleWebSearchService(WebSearchServiceInterface):
 
                 if hasattr(source, "domain") and source.domain and source.domain.description:
                     source_info.append(f"Domain Info: {source.domain.description}")
-                    # source_info.append(f"Domain Reliability: {'Reliable' if source.domain.is_reliable else 'Unreliable'}")
 
                 formatted_sources.append("\n".join(source_info))
 

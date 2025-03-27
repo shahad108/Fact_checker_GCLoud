@@ -106,7 +106,7 @@ class AnalysisOrchestrator:
                     response,
                 )
                 # logging.info(messages)
-                # logging.info(main_agent_message)
+                logging.info(main_agent_message)
                 # If search is requested in a message, truncate that message
                 # up to the search request. (Discard anything after the query.)
 
@@ -122,7 +122,7 @@ class AnalysisOrchestrator:
                     )
                     current_search = await self._search_repo.create(initial_search)
                     sources = await self._web_search.search_and_create_sources(
-                        search_request_match.matched_content, current_search.id
+                        claim_text=search_request_match.matched_content, search_id=current_search.id, language=language
                     )
 
                     all_sources += sources

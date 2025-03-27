@@ -7,7 +7,7 @@ from app.models.database.models import SourceModel
 class WebSearchServiceInterface(ABC):
     @abstractmethod
     async def search_and_create_sources(
-        self, claim_text: str, search_id: UUID, num_results: int = 5
+        self, claim_text: str, search_id: UUID, num_results: int = 5, language: str = "english"
     ) -> List[SourceModel]:
         pass
 
