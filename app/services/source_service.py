@@ -1,6 +1,7 @@
 import logging
 from typing import List, Tuple
 from uuid import UUID
+from datetime import datetime
 
 from app.models.domain.source import Source
 from app.repositories.implementations.source_repository import SourceRepository
@@ -133,3 +134,8 @@ class SourceService:
                 continue
 
         return authorized_sources, len(authorized_sources)
+    
+    async def list_time_bound_sources(
+            self, start_date: datetime, end_date: datetime, language: str = "english"
+    ) -> List[Source]:
+        pass
