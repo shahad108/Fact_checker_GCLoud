@@ -227,6 +227,7 @@ async def source_total(
 ) -> List[dict]:
     """Get total claims by language."""
     try:
+        # TODO Put a limit on how many can be retrieved 
         sources = await source_service.list_time_bound_sources(start_date=start_date, end_date=end_date, language=language)
         
         total_sources = len(sources)
@@ -239,7 +240,7 @@ async def source_total(
         groups = list(grouped_sources.values())
 
         aggregates = await source_service.calculate_domain_stats(groups, total_sources)
-        
+
         sorted_aggregates = sorted(aggregates, key=lambda x: x['percent_retrieved'], reverse=True)
 
         return {"sorted_aggregates": sorted_aggregates,
