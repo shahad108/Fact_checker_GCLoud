@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from uuid import UUID
+from typing import Optional
 
 
 class DomainCreate(BaseModel):
@@ -13,9 +14,9 @@ class DomainCreate(BaseModel):
 class DomainRead(BaseModel):
     id: UUID
     domain_name: str
-    credibility_score: float
+    credibility_score: Optional[float]
     is_reliable: bool
-    description: str = None
+    description: Optional[str]
     created_at: datetime
     updated_at: datetime
 

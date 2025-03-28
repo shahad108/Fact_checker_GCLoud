@@ -3,6 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from typing import List
 from uuid import UUID
 from datetime import datetime
+from collections import defaultdict
+
 
 from app.api.dependencies import get_source_service, get_current_user, get_search_service
 from app.models.domain.user import User
@@ -222,11 +224,27 @@ async def source_total(
     end_date: datetime,
     language: str = "english",
     source_service: SourceService = Depends(get_source_service),
-) -> dict:
+) -> List[dict]:
     """Get total claims by language."""
     try:
-        claims = await source_service.list_time_bound_claims(start_date=start_date, end_date=end_date, language=language)
-        return {"total_sources": len(claims)}
+        sources = await source_service.list_time_bound_sources(start_date=start_date, end_date=end_date, language=language)
+        
+        total_sources = len(sources)
+        grouped_sources = defaultdict(list)
+        for source in sources:
+            domain_url = source.domain.domain_name
+            grouped_sources[domain_url].append(source)
+
+        # Convert to list of lists
+        groups = list(grouped_sources.values())
+
+        aggregates = await source_service.calculate_domain_stats(groups, total_sources)
+        
+        sorted_aggregates = sorted(aggregates, key=lambda x: x['percent_retrieved'], reverse=True)
+
+        return {"sorted_aggregates": sorted_aggregates,
+                "total_sources": total_sources
+                }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to get list of sources: {str(e)}"

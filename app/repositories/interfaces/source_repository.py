@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, List, Tuple
 from uuid import UUID
 from app.models.domain.source import Source
+from datetime import datetime
 
 
 class SourceRepositoryInterface(ABC):
@@ -25,4 +26,8 @@ class SourceRepositoryInterface(ABC):
     @abstractmethod
     async def get_by_domain(self, domain_id: UUID, limit: int = 50, offset: int = 0) -> Tuple[List[Source], int]:
         """Get sources from a specific domain."""
+        pass
+
+    @abstractmethod
+    async def get_sources_filtered_by_date_and_language(self, start_date: datetime, end_date: datetime, language: str) -> List[Source]:
         pass
