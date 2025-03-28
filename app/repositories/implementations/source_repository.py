@@ -3,10 +3,11 @@ from uuid import UUID
 from sqlalchemy import select, desc
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime
 
 from app.models.domain.source import Source
 from app.repositories.base import BaseRepository
-from app.models.database.models import SourceModel
+from app.models.database.models import SourceModel, SearchModel, AnalysisModel, ClaimModel
 
 
 class SourceRepository(BaseRepository[SourceModel, Source]):
@@ -59,3 +60,19 @@ class SourceRepository(BaseRepository[SourceModel, Source]):
         except Exception as e:
             await self._session.rollback()
             raise e
+
+    async def get_sources_filtered_by_date_and_language(
+        self, start_date: datetime, end_date: datetime, language: str
+    ) -> List[SourceModel]:
+        query = (
+            select(SourceModel)
+            .join(SearchModel, SourceModel.search_id == SearchModel.id)
+            .join(AnalysisModel, SearchModel.analysis_id == AnalysisModel.id)
+            .join(ClaimModel, AnalysisModel.claim_id == ClaimModel.id)
+            .where(SourceModel.created_at.between(start_date, end_date), ClaimModel.language == language)
+            .order_by(desc(SourceModel.created_at))
+            .options(selectinload(self._model_class.domain))  # Adjust this based on relationships
+        )
+
+        result = await self._session.execute(query)
+        return result.scalars().all()

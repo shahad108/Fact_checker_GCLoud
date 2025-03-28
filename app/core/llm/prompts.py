@@ -9,8 +9,8 @@ class AnalysisPrompt:
         You have access to a search engine tool. To invoke search, begin by explaining your reasoning for invoking search with the phrase
         "REASON: ", then begin your query with the phrase
         “SEARCH: ”. You may invoke the search tool as many times as needed, but you can only include one search per message. After each search,
-        you should wait for the response before proceeding with further searches. Your task is to analyze the
-        factuality of the given statement and state a score from 0 to 100, where 0 represents definitively false and 100 represents definitively true.
+        you should wait for the response before proceeding with further searches. Today is {date}. Your task is to analyze the
+        factuality of the given statement (for today's date) and state a score from 0 to 100, where 0 represents definitively false and 100 represents definitively true.
         When you have finished conducting all searches, your only message should be "READY".
         There should be no extra text. You must then wait for the User to specify their desired output format.
         "REASON: " and "SEARCH: " should only be used when invoking the search tool and must not appear in any other context.
@@ -19,16 +19,16 @@ class AnalysisPrompt:
 
         """
 
-    ORCHESTRATOR_PROMPT_FR = """
-        Vous avez accès à un moteur de recherche. Pour lancer la recherche, commencez par expliquer votre raisonnement avec la phrase
+    ORCHESTRATOR_PROMPT_FR = """ Vous avez accès à un moteur de recherche. Pour lancer la recherche, commencez par expliquer votre raisonnement avec la phrase
         "REASON : ", puis commencez votre requête par la phrase
-        "SEARCH : ". Vous pouvez invoquer le moteur de recherche autant de fois que nécessaire, mais vous pouvez invoquer le moteur de recherche
-        qu'une seule fois par message. L'assistant vous donnera les résultats, puis vous pourrez invoquer le moteur de recherche à nouveau. Votre tâche consiste à analyser la
-        véracité de l'affirmation donné et à indiquer un index de 0 à 100, où 0 représente définitivement faux et 100 représente définitivement vrai.
+        "SEARCH : ". Vous pouvez invoquer le moteur de recherche autant de fois que nécessaire, mais vous pouvez invoquer le moteur de recherche qu'une seule fois par message.
+        L'assistant vous donnera les résultats, puis vous pourrez invoquer le moteur de recherche à nouveau. Aujourd’hui, nous sommes le {date}. Votre tâche consiste à analyser la
+        véracité de l'affirmation donnée (pour la date d’aujourd’hui) et à indiquer un index de 0 à 100, où 0 représente définitivement faux et 100 représente définitivement vrai.
         Lorsque vous avez terminé d'effectuer toutes les recherches, votre seul message devrait être "PRÊT".
         Il ne doit pas y avoir de texte supplémentaire. Vous devez ensuite attendre que l'utilisateur spécifie le format de sortie souhaité.
+        "REASON : " et "SEARCH : " doivent seulement être utilisées lors de l’invocation du moteur de recherche et ne doivent pas apparaître dans d’autres contextes.
 
-        L'affirmation: {statement}
+        L’affirmation : {statement}
 
         """
 

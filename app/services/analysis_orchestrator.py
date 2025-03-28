@@ -633,9 +633,9 @@ class AnalysisOrchestrator:
     def _query_initial(self, statement: str, language: str):
 
         if language == "english":
-            return AnalysisPrompt.ORCHESTRATOR_PROMPT.format(statement=statement)
+            return AnalysisPrompt.ORCHESTRATOR_PROMPT.format(statement=statement, date=datetime.now().isoformat())
         elif language == "french":
-            return AnalysisPrompt.ORCHESTRATOR_PROMPT_FR.format(statement=statement)
+            return AnalysisPrompt.ORCHESTRATOR_PROMPT_FR.format(statement=statement, date=datetime.now().isoformat())
         else:
             raise ValidationError("Claim Language is invalid")
 
