@@ -29,5 +29,7 @@ class SourceRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    async def get_sources_filtered_by_date_and_language(self, start_date: datetime, end_date: datetime, language: str) -> List[Source]:
+    async def get_sources_filtered_by_date_and_language(
+        self, start_date: datetime, end_date: datetime, language: str
+    ) -> List[Source]:
         pass

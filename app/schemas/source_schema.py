@@ -19,7 +19,7 @@ class SourceRead(BaseModel):
     title: str
     snippet: str
     credibility_score: Optional[float]
-    domain: Optional[DomainRead] 
+    domain: Optional[DomainRead]
 
     model_config = ConfigDict(from_attributes=True)
 

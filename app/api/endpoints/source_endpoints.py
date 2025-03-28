@@ -217,7 +217,8 @@ async def search_sources(
 #     except Exception as e:
 #         logger.error(f"Error searching sources: {str(e)}")
 #         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to search sources")
-    
+
+
 @router.get("/total/table", response_model=dict, summary="Total Sources")
 async def source_total(
     start_date: datetime,
@@ -227,9 +228,11 @@ async def source_total(
 ) -> List[dict]:
     """Get total claims by language."""
     try:
-        # TODO Put a limit on how many can be retrieved 
-        sources = await source_service.list_time_bound_sources(start_date=start_date, end_date=end_date, language=language)
-        
+        # TODO Put a limit on how many can be retrieved
+        sources = await source_service.list_time_bound_sources(
+            start_date=start_date, end_date=end_date, language=language
+        )
+
         total_sources = len(sources)
         grouped_sources = defaultdict(list)
         for source in sources:
@@ -241,11 +244,9 @@ async def source_total(
 
         aggregates = await source_service.calculate_domain_stats(groups, total_sources)
 
-        sorted_aggregates = sorted(aggregates, key=lambda x: x['percent_retrieved'], reverse=True)
+        sorted_aggregates = sorted(aggregates, key=lambda x: x["percent_retrieved"], reverse=True)
 
-        return {"sorted_aggregates": sorted_aggregates,
-                "total_sources": total_sources
-                }
+        return {"sorted_aggregates": sorted_aggregates, "total_sources": total_sources}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to get list of sources: {str(e)}"

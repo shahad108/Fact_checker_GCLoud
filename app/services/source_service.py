@@ -134,17 +134,17 @@ class SourceService:
                 continue
 
         return authorized_sources, len(authorized_sources)
-    
+
     async def list_time_bound_sources(
-            self, start_date: datetime, end_date: datetime, language: str = "english"
+        self, start_date: datetime, end_date: datetime, language: str = "english"
     ) -> List[Source]:
         """List sources for a specific date range."""
         sources = await self._source_repo.get_sources_filtered_by_date_and_language(
             start_date=start_date, end_date=end_date, language=language
         )
-        
+
         return sources
-    
+
     async def calculate_domain_stats(self, grouped_sources, total_objects):
         result = []
 
@@ -156,12 +156,12 @@ class SourceService:
             credibility_score = group[0].domain.credibility_score
             percent_retrieved = len(group) / total_objects
 
-            result.append({
-                "percent_retrieved": percent_retrieved,
-                "domain_name": domain_name,
-                "credibility_score": credibility_score
-            })
+            result.append(
+                {
+                    "percent_retrieved": percent_retrieved,
+                    "domain_name": domain_name,
+                    "credibility_score": credibility_score,
+                }
+            )
 
         return result
-
-
