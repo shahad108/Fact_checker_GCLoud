@@ -126,9 +126,11 @@ class ClaimService:
         if len(claim_embed) < 3:
             fig = go.Figure()
             fig.update_layout(
-                title="t-SNE Visualization with KMeans Clusters",
-                xaxis_title="t-SNE Dimension 1",
-                yaxis_title="t-SNE Dimension 2",
+                title=None,  # Remove title
+                xaxis_title=None,  # Remove x-axis title
+                yaxis_title=None,  # Remove y-axis title
+                xaxis=dict(showticklabels=False),  # Hide x-axis numbers
+                yaxis=dict(showticklabels=False),  # Hide y-axis numbers
                 template="plotly_white",
             )
             fig_json = fig.to_json()
@@ -143,15 +145,31 @@ class ClaimService:
             df = pd.DataFrame(X_embedded, columns=["x", "y"])
             df["cluster"] = kmeans.labels_  # Assign KMeans labels
 
+            df["claim_text"] = [claim.claim_text for claim in claims if claim.embedding is not None]
+
             fig = px.scatter(
                 df,
                 x="x",
                 y="y",
                 color=df["cluster"].astype(str),
-                title="t-SNE Visualization with KMeans Clusters",
-                labels={"0": "t-SNE Dimension 1", "1": "t-SNE Dimension 2"},
+                title=None,
+                labels={"cluster": "Cluster", "claim_text": "Claim text"},
                 color_discrete_sequence=px.colors.qualitative.Set1,  # Custom color scheme
                 template="plotly_white",
+                hover_data={
+                    "x": False,  # Remove x-axis data from hover
+                    "y": False,  # Remove y-axis data from hover
+                    "cluster": True,  # Rename the color to 'cluster'
+                    "claim_text": True,  # Show claim_text
+                },
+            )
+
+            fig.update_layout(
+                xaxis_title=None,
+                yaxis_title=None,
+                xaxis=dict(showticklabels=False),
+                yaxis=dict(showticklabels=False),
+                legend_title="Cluster",  # Set custom legend title
             )
 
             fig_json = fig.to_json()
