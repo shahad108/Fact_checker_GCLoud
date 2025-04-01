@@ -1,7 +1,7 @@
 from datetime import datetime, UTC
 from typing import List, Optional, Tuple
 from uuid import UUID, uuid4
-from wordcloud import WordCloud
+from wordcloud import WordCloud, STOPWORDS
 import json
 import plotly.graph_objects as go
 import logging
@@ -16,6 +16,12 @@ from app.models.database.models import ClaimStatus
 from app.models.domain.claim import Claim
 from app.repositories.implementations.claim_repository import ClaimRepository
 from app.core.exceptions import NotFoundException, NotAuthorizedException
+
+from nltk.corpus import stopwords
+
+import nltk
+
+nltk.download("stopwords")
 
 logger = logging.getLogger(__name__)
 
@@ -99,8 +105,13 @@ class ClaimService:
             graph = json.loads(fig_json)
             return graph
 
+        french_stopwords = set(stopwords.words("french"))
+        custom_stopwords = french_stopwords.union(STOPWORDS)
+
         text = " ".join(claim_texts)
-        wordcloud = WordCloud(background_color="white", colormap="rainbow", margin=0).generate(text)
+        wordcloud = WordCloud(
+            background_color="white", colormap="rainbow", margin=0, stopwords=custom_stopwords
+        ).generate(text)
 
         image = wordcloud.to_array()
         fig = go.Figure(go.Image(z=image))
