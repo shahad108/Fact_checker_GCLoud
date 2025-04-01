@@ -105,8 +105,7 @@ class AnalysisOrchestrator:
                     "Invalid Main Agent API response:",
                     response,
                 )
-                # logging.info(messages)
-                logging.info(main_agent_message)
+
                 # If search is requested in a message, truncate that message
                 # up to the search request. (Discard anything after the query.)
 
