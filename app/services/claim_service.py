@@ -20,7 +20,8 @@ from app.core.exceptions import NotFoundException, NotAuthorizedException
 from nltk.corpus import stopwords
 
 import nltk
-nltk.download('stopwords')
+
+nltk.download("stopwords")
 
 logger = logging.getLogger(__name__)
 
@@ -103,12 +104,14 @@ class ClaimService:
             fig_json = fig.to_json()
             graph = json.loads(fig_json)
             return graph
-        
-        french_stopwords = set(stopwords.words('french'))
+
+        french_stopwords = set(stopwords.words("french"))
         custom_stopwords = french_stopwords.union(STOPWORDS)
 
         text = " ".join(claim_texts)
-        wordcloud = WordCloud(background_color="white", colormap="rainbow", margin=0, stopwords=custom_stopwords).generate(text)
+        wordcloud = WordCloud(
+            background_color="white", colormap="rainbow", margin=0, stopwords=custom_stopwords
+        ).generate(text)
 
         image = wordcloud.to_array()
         fig = go.Figure(go.Image(z=image))
