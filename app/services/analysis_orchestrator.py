@@ -136,7 +136,6 @@ class AnalysisOrchestrator:
                     elif language == "french":
                         messages += [
                             LLMMessage(role="assistant", content=main_agent_message),
-                            # TODO Translate this
                             LLMMessage(
                                 role="user", content=f"Résultat(s) de la recherche sur le Web: {search_response}"
                             ),
