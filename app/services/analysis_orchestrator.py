@@ -522,6 +522,51 @@ class AnalysisOrchestrator:
             yield {"type": "error", "content": str(e)}
             raise
 
+    async def analyze_claim_direct(self, claim_id: UUID, user_id: UUID) -> Dict[str, Any]:
+        claim = await self._claim_repo.get(claim_id)
+        if not claim:
+            raise ValueError(f"Claim {claim_id} not found")
+
+        self._analysis_state.current_claim = claim
+        await self._claim_repo.update_status(claim_id, ClaimStatus.analyzing)
+
+        analysis_complete = False
+        final_chunk = None
+
+        async for chunk in self._generate_analysis(claim.claim_text, claim.context, claim.language):
+            if chunk["type"] == "analysis_complete":
+                analysis_complete = True
+                final_chunk = chunk
+
+        if not analysis_complete:
+            await self._claim_repo.update_status(claim_id, ClaimStatus.failed)
+            raise ValueError(f"Analysis incomplete for claim {claim_id}")
+
+        # Get analysis and initialize conversations
+        analysis = await self._analysis_repo.get(UUID(final_chunk["content"]["analysis_id"]))
+        conversation_ids = await self.initialize_claim_conversation(
+            user_id=user_id,
+            claim_text=claim.claim_text,
+            analysis_text=analysis.analysis_text,
+            claim_id=claim_id,
+            analysis_id=analysis.id,
+        )
+
+        await self._claim_repo.update_status(claim_id, ClaimStatus.analyzed)
+
+        return {
+            "conversation_id": conversation_ids["conversation_id"],
+            "claim_conversation_id": conversation_ids["claim_conversation_id"],
+            "analysis": {
+                "id": str(analysis.id),
+                "analysis_text": analysis.analysis_text,
+                "veracity_score": analysis.veracity_score,
+                "num_sources": final_chunk["content"]["num_sources"],
+                "source_credibility": final_chunk["content"]["source_credibility"],
+                "created_at": analysis.created_at.isoformat() if analysis.created_at else None,
+            },
+        }
+
     async def stream_claim_discussion(
         self,
         conversation_id: UUID,

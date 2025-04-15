@@ -1,14 +1,22 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 import logging
 from datetime import datetime
 
-from app.api.dependencies import get_claim_service, get_current_user, get_embedding_generator
+from app.api.dependencies import get_claim_service, get_current_user, get_embedding_generator, get_orchestrator_service
 from app.models.database.models import ClaimStatus
 from app.models.domain.user import User
-from app.schemas.claim_schema import ClaimCreate, ClaimList, ClaimRead, ClaimStatusUpdate, WordCloudRequest
+from app.schemas.claim_schema import (
+    ClaimCreate,
+    ClaimList,
+    ClaimRead,
+    ClaimStatusUpdate,
+    WordCloudRequest,
+    BatchAnalysisResponse,
+)
 from app.services.claim_service import ClaimService
+from app.services.analysis_orchestrator import AnalysisOrchestrator
 from app.core.exceptions import NotFoundException, NotAuthorizedException
 from app.services.interfaces.embedding_generator import EmbeddingGeneratorInterface
 
@@ -29,11 +37,57 @@ async def create_claim(
             claim_text=data.claim_text,
             context=data.context,
             language=data.language,
+            batch_user_id=data.batch_user_id,
         )
         return ClaimRead.model_validate(claim)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to create claim: {str(e)}"
+        )
+
+
+@router.post("/batch", response_model=BatchAnalysisResponse, status_code=status.HTTP_201_CREATED)
+async def create_claims_batch(
+    claims: List[ClaimCreate],
+    current_user: User = Depends(get_current_user),
+    claim_service: ClaimService = Depends(get_claim_service),
+    analysis_orchestrator: AnalysisOrchestrator = Depends(get_orchestrator_service),
+) -> BatchAnalysisResponse:
+    if len(claims) > 100:
+        raise HTTPException(status_code=400, detail="Maximum of 100 claims allowed.")
+
+    try:
+        created_claims = await claim_service.create_claims_batch(claims, current_user.id)
+
+        successes = []
+        failures = []
+        for claim in created_claims:
+            try:
+                result = await analysis_orchestrator.analyze_claim_direct(claim.id, current_user.id)
+                successes.append(
+                    {
+                        "claim_id": str(claim.id),
+                        "analysis_id": result.get("analysis").get("id"),
+                        "batch_user_id": claim.batch_user_id,
+                        "batch_post_id": "CCC",
+                        "veracity_score": result.get("analysis").get("veracity_score"),
+                        "average_source_credibility": result.get("analysis").get("source_credibility"),
+                        "num_sources": result.get("analysis").get("num_sources"),
+                    }
+                )
+            except Exception as e:
+                failures.append(
+                    {
+                        "claim_id": str(claim.id),
+                        "status": "error",
+                        "message": str(e),
+                    }
+                )
+        return {"successes": successes, "failures": failures}
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to process batch: {str(e)}"
         )
 
 

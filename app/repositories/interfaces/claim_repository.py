@@ -44,3 +44,7 @@ class ClaimRepositoryInterface(ABC):
     @abstractmethod
     def get_claims_in_date_range(self, start_date: datetime, end_date: datetime, language: str):
         pass
+
+    @abstractmethod
+    async def insert_many(self, claim_models: List[Claim]) -> List[Claim]:
+        pass

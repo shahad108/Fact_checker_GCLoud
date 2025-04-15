@@ -109,6 +109,8 @@ class ClaimModel(Base):
 
     claim_text: Mapped[str] = mapped_column(Text, nullable=False)
     context: Mapped[str] = mapped_column(Text, nullable=True)
+    batch_user_id: Mapped[str] = mapped_column(Text, nullable=True)
+    batch_post_id: Mapped[str] = mapped_column(Text, nullable=True)
     status: Mapped[ClaimStatus] = mapped_column(
         SQLEnum(ClaimStatus, name="claim_status"), default=ClaimStatus.pending, nullable=False
     )

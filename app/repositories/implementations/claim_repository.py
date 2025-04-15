@@ -23,6 +23,8 @@ class ClaimRepository(BaseRepository[ClaimModel, Claim], ClaimRepositoryInterfac
             user_id=claim.user_id,
             claim_text=claim.claim_text,
             context=claim.context,
+            batch_user_id=claim.batch_user_id,
+            batch_post_id=claim.batch_post_id,
             language=claim.language,
             embedding=claim.embedding,
             status=ClaimStatus(claim.status).value,
@@ -35,6 +37,8 @@ class ClaimRepository(BaseRepository[ClaimModel, Claim], ClaimRepositoryInterfac
             claim_text=model.claim_text,
             context=model.context,
             language=model.language,
+            batch_user_id=model.batch_user_id,
+            batch_post_id=model.batch_post_id,
             embedding=model.embedding,
             status=ClaimStatus(model.status),
             created_at=model.created_at,
@@ -89,3 +93,10 @@ class ClaimRepository(BaseRepository[ClaimModel, Claim], ClaimRepositoryInterfac
         )
         result = await self._session.execute(stmt)
         return [self._to_domain(claim) for claim in result.scalars().all()]
+
+    async def insert_many(self, claim: List[Claim]) -> List[Claim]:
+        models = [self._to_model(claim) for claim in claim]
+        self._session.add_all(models)
+        await self._session.flush()  # get generated fields like id, created_at
+        await self._session.commit()
+        return [self._to_domain(model) for model in models]
