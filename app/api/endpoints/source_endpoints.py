@@ -196,29 +196,6 @@ async def search_sources(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to search sources")
 
 
-# @router.get("/aggregate/table", response_model=SourceList, summary="Source Summary")
-# async def source_table(
-#     start_date: datetime,
-#     end_date: datetime,
-#     language: str = "english",
-#     source_service: SourceService = Depends(get_source_service),
-# ) -> SourceList:
-#     """
-#     Search through sources based on title, content, or URL.
-#     Only searches through sources from analyses the user has access to.
-#     """
-#     try:
-#         sources, total = await source_service.search_sources(
-#             query=query, user_id=current_user.id, limit=limit, offset=offset
-#         )
-#         return SourceList(
-#             items=[SourceRead.model_validate(s) for s in sources], total=total, limit=limit, offset=offset
-#         )
-#     except Exception as e:
-#         logger.error(f"Error searching sources: {str(e)}")
-#         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to search sources")
-
-
 @router.get("/total/table", response_model=dict, summary="Total Sources")
 async def source_total(
     start_date: datetime,

@@ -53,6 +53,8 @@ def include_object(object, name, type_, reflected, compare_to):
     # Check if the table has the `skip_autogenerate` flag in its `info`
     if type_ == "table" and name == "feedback_labels":
         return False
+    if type_ == "table" and name == "social_media_clients":
+        return False
     return True
 
 

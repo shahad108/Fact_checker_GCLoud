@@ -10,6 +10,8 @@ class ClaimCreate(BaseModel):
     claim_text: str
     context: str
     language: str = "english"
+    batch_user_id: str = None
+    batch_post_id: str = None
 
 
 class ClaimStatusUpdate(BaseModel):
@@ -35,6 +37,8 @@ class ClaimRead(BaseModel):
     language: str
     created_at: datetime
     updated_at: datetime
+    batch_user_id: Optional[str]
+    batch_post_id: Optional[str]
     embedding: Optional[List[float]]
 
     model_config = ConfigDict(from_attributes=True)
@@ -53,3 +57,24 @@ class WordCloudRequest(BaseModel):
     start_date: datetime
     end_date: datetime
     language: str = "english"
+
+
+class SuccessResult(BaseModel):
+    claim_id: UUID
+    analysis_id: UUID
+    batch_user_id: str
+    batch_post_id: str
+    veracity_score: float
+    average_source_credibility: float
+    num_sources: int
+
+
+class FailureResult(BaseModel):
+    claim_id: UUID
+    status: str
+    message: str
+
+
+class BatchAnalysisResponse(BaseModel):
+    successes: List[SuccessResult]
+    failures: List[FailureResult]

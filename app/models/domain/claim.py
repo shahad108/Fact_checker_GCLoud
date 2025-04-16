@@ -18,6 +18,8 @@ class Claim:
     language: str
     created_at: datetime
     updated_at: datetime
+    batch_user_id: Optional[str] = None
+    batch_post_id: Optional[str] = None
     embedding: Optional[List[float]] = None
 
     @classmethod
@@ -28,6 +30,8 @@ class Claim:
             user_id=model.user_id,
             claim_text=model.claim_text,
             context=model.context,
+            batch_user_id=model.batch_user_id,
+            batch_post_id=model.batch_post_id,
             status=ClaimStatus(model.status),
             language=model.language,
             embedding=model.embedding,
@@ -42,6 +46,8 @@ class Claim:
             user_id=self.user_id,
             claim_text=self.claim_text,
             context=self.context,
+            batch_user_id=self.batch_user_id,
+            batch_post_id=self.batch_post_id,
             status=ClaimStatus(self.status).value,
             language=self.language,
             embedding=self.embedding,

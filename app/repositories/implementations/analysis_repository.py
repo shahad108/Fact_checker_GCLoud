@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from datetime import datetime
 
-from app.models.database.models import AnalysisModel, AnalysisStatus
+from app.models.database.models import AnalysisModel, AnalysisStatus, SearchModel
 from app.models.domain.analysis import Analysis
 from app.models.domain.feedback import Feedback
 from app.models.domain.source import Source
@@ -37,7 +37,7 @@ class AnalysisRepository(BaseRepository[AnalysisModel, Analysis]):
             status=model.status.value,
             created_at=model.created_at,
             updated_at=model.updated_at,
-            sources=None,
+            searches=None,
             feedback=None,
         )
 
@@ -58,7 +58,7 @@ class AnalysisRepository(BaseRepository[AnalysisModel, Analysis]):
             select(self._model_class)
             .where(self._model_class.id == analysis_id)
             .options(
-                selectinload(self._model_class.sources),
+                selectinload(self._model_class.searches).selectinload(SearchModel.sources),
                 selectinload(self._model_class.feedbacks),
             )
         )
@@ -71,7 +71,7 @@ class AnalysisRepository(BaseRepository[AnalysisModel, Analysis]):
 
         self._session.expunge(model)
 
-        return model
+        return Analysis.from_model(model=model)
 
     async def get_by_claim(
         self, claim_id: UUID, include_sources: bool = False, include_feedback: bool = False

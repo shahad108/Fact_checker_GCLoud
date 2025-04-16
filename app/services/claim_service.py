@@ -187,3 +187,25 @@ class ClaimService:
             graph = json.loads(fig_json)
 
             return graph
+
+    async def create_claims_batch(self, claims: List[Claim], user_id: str) -> List[Claim]:
+        # Map ClaimCreate + user_id → Claim DB objects
+        now = datetime.now(UTC)
+        claim_models = [
+            Claim(
+                id=uuid4(),
+                user_id=user_id,
+                claim_text=c.claim_text,
+                context=c.context,
+                language=c.language,
+                batch_user_id=c.batch_user_id,
+                batch_post_id=c.batch_post_id,
+                status=ClaimStatus.pending,
+                created_at=now,
+                updated_at=now,
+                # Optional: Add default status, timestamps if needed
+            )
+            for c in claims
+        ]
+
+        return await self._claim_repo.insert_many(claim_models)
