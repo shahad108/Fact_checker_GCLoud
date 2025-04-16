@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
+from typing import Optional, List
 
 from app.models.database.models import SearchModel
+from app.models.domain.source import Source
 
 
 @dataclass
@@ -15,6 +17,7 @@ class Search:
     summary: str
     created_at: datetime
     updated_at: datetime
+    sources: Optional[List["Source"]] = None
 
     @classmethod
     def from_model(cls, model: "SearchModel") -> "Search":
@@ -26,6 +29,7 @@ class Search:
             summary=model.summary,
             created_at=model.created_at,
             updated_at=model.updated_at,
+            sources=[Source.from_model(s) for s in model.sources] if model.sources else None,
         )
 
     def to_model(self) -> "SearchModel":

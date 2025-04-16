@@ -64,15 +64,41 @@ async def create_claims_batch(
         for claim in created_claims:
             try:
                 result = await analysis_orchestrator.analyze_claim_direct(claim.id, current_user.id)
+                analysis = result.get("analysis")
+
+                searches = []
+                if analysis.searches:
+                    searches = analysis.searches
+                sources = []
+                for search in searches:
+                    if search.sources: 
+                        sources.append(search.sources)
+
+                flat_sources = [item for sublist in sources for item in sublist]
+
+                seen_urls = set()
+                unique_sources = []
+
+                for source in flat_sources:
+                    if source.url not in seen_urls:
+                        unique_sources.append(source)
+                        seen_urls.add(source.url)
+                
+                valid_scores = [source.credibility_score for source in unique_sources if source.credibility_score is not None]
+
+                avg_source_cred = 0.0
+                if valid_scores:
+                    avg_source_cred = sum(valid_scores) / len(valid_scores)
+
                 successes.append(
                     {
                         "claim_id": str(claim.id),
-                        "analysis_id": result.get("analysis").get("id"),
+                        "analysis_id": str(analysis.id),
                         "batch_user_id": claim.batch_user_id,
-                        "batch_post_id": "CCC",
-                        "veracity_score": result.get("analysis").get("veracity_score"),
-                        "average_source_credibility": result.get("analysis").get("source_credibility"),
-                        "num_sources": result.get("analysis").get("num_sources"),
+                        "batch_post_id": claim.batch_post_id,
+                        "veracity_score": analysis.veracity_score,
+                        "average_source_credibility": avg_source_cred,
+                        "num_sources": len(valid_scores),
                     }
                 )
             except Exception as e:

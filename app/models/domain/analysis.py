@@ -5,7 +5,7 @@ from uuid import UUID
 
 from app.models.database.models import AnalysisModel, AnalysisStatus
 from app.models.domain.feedback import Feedback
-from app.models.domain.source import Source
+from app.models.domain.search import Search
 
 
 @dataclass
@@ -20,7 +20,7 @@ class Analysis:
     status: str
     created_at: datetime
     updated_at: datetime
-    sources: Optional[List["Source"]] = None
+    searches: Optional[List["Search"]] = None
     feedback: Optional[List["Feedback"]] = None
 
     @classmethod
@@ -35,8 +35,8 @@ class Analysis:
             status=model.status.value,
             created_at=model.created_at,
             updated_at=model.updated_at,
-            sources=[Source.from_model(s) for s in model.sources] if model.sources else None,
-            feedback=[Feedback.from_model(f) for f in model.feedback] if model.feedback else None,
+            searches=[Search.from_model(s) for s in model.searches] if model.searches else None,
+            feedback=[Feedback.from_model(f) for f in model.feedbacks] if model.feedbacks else None,
         )
 
     def to_model(self) -> "AnalysisModel":
