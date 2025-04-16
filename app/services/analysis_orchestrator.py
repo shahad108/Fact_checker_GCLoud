@@ -544,13 +544,13 @@ class AnalysisOrchestrator:
 
         # Get analysis and initialize conversations
         analysis = await self._analysis_repo.get_with_relations(UUID(final_chunk["content"]["analysis_id"]))
-        
+
         conversation_ids = await self.initialize_claim_conversation(
             user_id=user_id,
             claim_text=claim.claim_text,
             analysis_text=analysis.analysis_text,
             claim_id=claim_id,
-            analysis_id=analysis.id
+            analysis_id=analysis.id,
         )
 
         await self._claim_repo.update_status(claim_id, ClaimStatus.analyzed)

@@ -71,7 +71,7 @@ async def create_claims_batch(
                     searches = analysis.searches
                 sources = []
                 for search in searches:
-                    if search.sources: 
+                    if search.sources:
                         sources.append(search.sources)
 
                 flat_sources = [item for sublist in sources for item in sublist]
@@ -83,8 +83,10 @@ async def create_claims_batch(
                     if source.url not in seen_urls:
                         unique_sources.append(source)
                         seen_urls.add(source.url)
-                
-                valid_scores = [source.credibility_score for source in unique_sources if source.credibility_score is not None]
+
+                valid_scores = [
+                    source.credibility_score for source in unique_sources if source.credibility_score is not None
+                ]
 
                 avg_source_cred = 0.0
                 if valid_scores:

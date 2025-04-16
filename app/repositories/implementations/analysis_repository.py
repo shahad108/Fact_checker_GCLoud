@@ -62,7 +62,7 @@ class AnalysisRepository(BaseRepository[AnalysisModel, Analysis]):
                 selectinload(self._model_class.feedbacks),
             )
         )
-        
+
         result = await self._session.execute(query)
         model = result.scalar_one_or_none()
 
@@ -71,7 +71,7 @@ class AnalysisRepository(BaseRepository[AnalysisModel, Analysis]):
 
         self._session.expunge(model)
 
-        return (Analysis.from_model(model=model))
+        return Analysis.from_model(model=model)
 
     async def get_by_claim(
         self, claim_id: UUID, include_sources: bool = False, include_feedback: bool = False
