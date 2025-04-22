@@ -38,7 +38,7 @@ async def create_claim(
             context=data.context,
             language=data.language,
             batch_user_id=data.batch_user_id,
-            batch_post_id=data.batch_post_id
+            batch_post_id=data.batch_post_id,
         )
         return ClaimRead.model_validate(claim)
     except Exception as e:
