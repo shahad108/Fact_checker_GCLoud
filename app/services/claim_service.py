@@ -30,7 +30,7 @@ class ClaimService:
     def __init__(self, claim_repository: ClaimRepository):
         self._claim_repo = claim_repository
 
-    async def create_claim(self, user_id: UUID, claim_text: str, context: str, language: str) -> Claim:
+    async def create_claim(self, user_id: UUID, claim_text: str, context: str, language: str, batch_user_id: str = None, batch_post_id: str = None) -> Claim:
         """Create a new claim."""
         now = datetime.now(UTC)
         claim = Claim(
@@ -42,6 +42,8 @@ class ClaimService:
             status=ClaimStatus.pending,
             created_at=now,
             updated_at=now,
+            batch_user_id=batch_user_id,
+            batch_post_id=batch_post_id
         )
 
         return await self._claim_repo.create(claim)
