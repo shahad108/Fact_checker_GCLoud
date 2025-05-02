@@ -5,7 +5,6 @@ from wordcloud import WordCloud, STOPWORDS
 import json
 import plotly.graph_objects as go
 import logging
-from fastapi import BackgroundTasks
 
 from sklearn.manifold import TSNE
 from sklearn.cluster import KMeans
@@ -224,7 +223,7 @@ class ClaimService:
         ]
 
         return await self._claim_repo.insert_many(claim_models)
-    
+
     async def process_claims_batch_async(
         self,
         created_claims,
@@ -240,9 +239,7 @@ class ClaimService:
                 analysis = result.get("analysis")
 
                 searches = analysis.searches or []
-                flat_sources = [
-                    source for search in searches for source in (search.sources or [])
-                ]
+                flat_sources = [source for search in searches for source in (search.sources or [])]
 
                 seen_urls = set()
                 unique_sources = []
@@ -257,31 +254,32 @@ class ClaimService:
 
                 avg_source_cred = sum(valid_scores) / len(valid_scores) if valid_scores else 0.0
 
-                successes.append({
-                    "claim_id": str(claim.id),
-                    "analysis_id": str(analysis.id),
-                    "batch_user_id": claim.batch_user_id,
-                    "batch_post_id": claim.batch_post_id,
-                    "veracity_score": analysis.veracity_score,
-                    "average_source_credibility": avg_source_cred,
-                    "num_sources": len(valid_scores),
-                })
+                successes.append(
+                    {
+                        "claim_id": str(claim.id),
+                        "analysis_id": str(analysis.id),
+                        "batch_user_id": claim.batch_user_id,
+                        "batch_post_id": claim.batch_post_id,
+                        "veracity_score": analysis.veracity_score,
+                        "average_source_credibility": avg_source_cred,
+                        "num_sources": len(valid_scores),
+                    }
+                )
 
             except Exception as e:
                 logging.exception(f"Analysis failed for claim {claim.id}")
-                failures.append({
-                    "claim_id": str(claim.id),
-                    "status": "error",
-                    "message": str(e),
-                })
+                failures.append(
+                    {
+                        "claim_id": str(claim.id),
+                        "status": "error",
+                        "message": str(e),
+                    }
+                )
 
         # Optionally, store results somewhere (DB, cache, file, etc.)
         logging.info(f"Batch completed: {len(successes)} successes, {len(failures)} failures")
 
-    async def get_analysis_results_for_claim_ids(
-        self,
-        claim_ids: List[UUID]
-    ):
+    async def get_analysis_results_for_claim_ids(self, claim_ids: List[UUID]):
         successes = []
         failures = []
 
@@ -290,25 +288,29 @@ class ClaimService:
                 # You may need to adjust this based on how you load a claim/analysis
                 claim = await self._claim_repo.get(claim_id)
                 if claim is None:
-                    failures.append({
-                    "claim_id": str(claim_id),
-                    "status": "error",
-                    "message": "claim ID not in the database",
-                    })
+                    failures.append(
+                        {
+                            "claim_id": str(claim_id),
+                            "status": "error",
+                            "message": "claim ID not in the database",
+                        }
+                    )
                     continue
-                analysis = await self._analysis_repo.get_latest_by_claim(claim_id=claim_id, include_searches=True, include_sources=True)
+                analysis = await self._analysis_repo.get_latest_by_claim(
+                    claim_id=claim_id, include_searches=True, include_sources=True
+                )
                 if analysis.status != "completed":
-                    failures.append({
-                    "claim_id": str(claim_id),
-                    "status": "incomplete",
-                    "message": f"analysis not completed, in state {analysis.status}",
-                    })
-                    continue                    
+                    failures.append(
+                        {
+                            "claim_id": str(claim_id),
+                            "status": "incomplete",
+                            "message": f"analysis not completed, in state {analysis.status}",
+                        }
+                    )
+                    continue
 
                 searches = analysis.searches or []
-                flat_sources = [
-                    source for search in searches for source in (search.sources or [])
-                ]
+                flat_sources = [source for search in searches for source in (search.sources or [])]
 
                 seen_urls = set()
                 unique_sources = []
@@ -323,23 +325,25 @@ class ClaimService:
 
                 avg_source_cred = sum(valid_scores) / len(valid_scores) if valid_scores else 0.0
 
-                successes.append({
-                    "claim_id": str(claim_id),
-                    "analysis_id": str(analysis.id),
-                    "batch_user_id": claim.batch_user_id,
-                    "batch_post_id": claim.batch_post_id,
-                    "veracity_score": analysis.veracity_score,
-                    "average_source_credibility": avg_source_cred,
-                    "num_sources": len(valid_scores),
-                })
+                successes.append(
+                    {
+                        "claim_id": str(claim_id),
+                        "analysis_id": str(analysis.id),
+                        "batch_user_id": claim.batch_user_id,
+                        "batch_post_id": claim.batch_post_id,
+                        "veracity_score": analysis.veracity_score,
+                        "average_source_credibility": avg_source_cred,
+                        "num_sources": len(valid_scores),
+                    }
+                )
             except Exception as e:
-                failures.append({
-                    "claim_id": str(claim.id),
-                    "status": "error",
-                    "message": str(e),
-                })
+                failures.append(
+                    {
+                        "claim_id": str(claim.id),
+                        "status": "error",
+                        "message": str(e),
+                    }
+                )
                 continue
 
         return {"successes": successes, "failures": failures}
-
-

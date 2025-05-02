@@ -79,7 +79,7 @@ class BatchAnalysisResponse(BaseModel):
     successes: List[SuccessResult]
     failures: List[FailureResult]
 
+
 class BatchResponse(BaseModel):
     message: str
     claim_ids: List[str]
-    

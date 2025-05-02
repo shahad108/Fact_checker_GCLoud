@@ -14,7 +14,7 @@ from app.schemas.claim_schema import (
     ClaimStatusUpdate,
     WordCloudRequest,
     BatchAnalysisResponse,
-    BatchResponse
+    BatchResponse,
 )
 from app.services.claim_service import ClaimService
 from app.services.analysis_orchestrator import AnalysisOrchestrator
@@ -65,10 +65,7 @@ async def create_claims_batch(
         background_tasks.add_task(
             claim_service.process_claims_batch_async, created_claims, current_user.id, analysis_orchestrator
         )
-        return {
-            "message": f"Processing {len(created_claims)} claims in the background.",
-            "claim_ids": claim_ids
-        }
+        return {"message": f"Processing {len(created_claims)} claims in the background.", "claim_ids": claim_ids}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to queue batch: {str(e)}"
@@ -112,15 +109,18 @@ async def get_claim(
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to get claim: {str(e)}")
 
+
 @router.post("/batch/results", response_model=BatchAnalysisResponse, summary="Get a batch results")
 async def get_batch_results(
     claim_ids: List[UUID],
     claim_service: ClaimService = Depends(get_claim_service),
 ):
-    try: 
+    try:
         return await claim_service.get_analysis_results_for_claim_ids(claim_ids=claim_ids)
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to get analysis for claims: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to get analysis for claims: {str(e)}"
+        )
 
 
 @router.patch("/{claim_id}/status", response_model=ClaimRead, summary="Update claim status")
