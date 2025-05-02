@@ -94,8 +94,9 @@ async def get_user_service(user_repository: UserRepository = Depends(get_user_re
 
 async def get_claim_service(
     claim_repository: ClaimRepository = Depends(get_claim_repository),
+    analysis_repository: AnalysisRepository = Depends(get_analysis_repository)
 ) -> ClaimService:
-    return ClaimService(claim_repository)
+    return ClaimService(claim_repository, analysis_repository)
 
 
 async def get_claim_conversation_service(

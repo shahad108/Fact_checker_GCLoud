@@ -21,7 +21,7 @@ class AnalysisRepositoryInterface(ABC):
 
     @abstractmethod
     async def get_by_claim(
-        self, claim_id: UUID, include_sources: bool = False, include_feedback: bool = False
+        self, claim_id: UUID, include_searches: bool = False, include_sources: bool = False, include_feedback: bool = False
     ) -> List[Analysis]:
         """Get all analyses for a claim."""
         pass

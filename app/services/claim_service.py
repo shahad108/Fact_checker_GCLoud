@@ -5,6 +5,7 @@ from wordcloud import WordCloud, STOPWORDS
 import json
 import plotly.graph_objects as go
 import logging
+from fastapi import BackgroundTasks
 
 from sklearn.manifold import TSNE
 from sklearn.cluster import KMeans
@@ -15,6 +16,9 @@ import numpy as np
 from app.models.database.models import ClaimStatus
 from app.models.domain.claim import Claim
 from app.repositories.implementations.claim_repository import ClaimRepository
+from app.repositories.implementations.analysis_repository import AnalysisRepository
+from app.services.analysis_orchestrator import AnalysisOrchestrator
+
 from app.core.exceptions import NotFoundException, NotAuthorizedException
 
 from nltk.corpus import stopwords
@@ -27,8 +31,9 @@ logger = logging.getLogger(__name__)
 
 
 class ClaimService:
-    def __init__(self, claim_repository: ClaimRepository):
+    def __init__(self, claim_repository: ClaimRepository, analysis_repository: AnalysisRepository):
         self._claim_repo = claim_repository
+        self._analysis_repo = analysis_repository
 
     async def create_claim(
         self,
@@ -219,3 +224,122 @@ class ClaimService:
         ]
 
         return await self._claim_repo.insert_many(claim_models)
+    
+    async def process_claims_batch_async(
+        self,
+        created_claims,
+        user_id: str,
+        analysis_orchestrator: AnalysisOrchestrator,
+    ):
+        successes = []
+        failures = []
+
+        for claim in created_claims:
+            try:
+                result = await analysis_orchestrator.analyze_claim_direct(claim.id, user_id)
+                analysis = result.get("analysis")
+
+                searches = analysis.searches or []
+                flat_sources = [
+                    source for search in searches for source in (search.sources or [])
+                ]
+
+                seen_urls = set()
+                unique_sources = []
+                for source in flat_sources:
+                    if source.url not in seen_urls:
+                        unique_sources.append(source)
+                        seen_urls.add(source.url)
+
+                valid_scores = [
+                    source.credibility_score for source in unique_sources if source.credibility_score is not None
+                ]
+
+                avg_source_cred = sum(valid_scores) / len(valid_scores) if valid_scores else 0.0
+
+                successes.append({
+                    "claim_id": str(claim.id),
+                    "analysis_id": str(analysis.id),
+                    "batch_user_id": claim.batch_user_id,
+                    "batch_post_id": claim.batch_post_id,
+                    "veracity_score": analysis.veracity_score,
+                    "average_source_credibility": avg_source_cred,
+                    "num_sources": len(valid_scores),
+                })
+
+            except Exception as e:
+                logging.exception(f"Analysis failed for claim {claim.id}")
+                failures.append({
+                    "claim_id": str(claim.id),
+                    "status": "error",
+                    "message": str(e),
+                })
+
+        # Optionally, store results somewhere (DB, cache, file, etc.)
+        logging.info(f"Batch completed: {len(successes)} successes, {len(failures)} failures")
+
+    async def get_analysis_results_for_claim_ids(
+        self,
+        claim_ids: List[UUID]
+    ):
+        successes = []
+        failures = []
+
+        for claim_id in claim_ids:
+            try:
+                # You may need to adjust this based on how you load a claim/analysis
+                claim = await self._claim_repo.get(claim_id)
+                if claim is None:
+                    failures.append({
+                    "claim_id": str(claim_id),
+                    "status": "error",
+                    "message": "claim ID not in the database",
+                    })
+                    continue
+                analysis = await self._analysis_repo.get_latest_by_claim(claim_id=claim_id, include_searches=True, include_sources=True)
+                if analysis.status != "completed":
+                    failures.append({
+                    "claim_id": str(claim_id),
+                    "status": "incomplete",
+                    "message": f"analysis not completed, in state {analysis.status}",
+                    })
+                    continue                    
+
+                searches = analysis.searches or []
+                flat_sources = [
+                    source for search in searches for source in (search.sources or [])
+                ]
+
+                seen_urls = set()
+                unique_sources = []
+                for source in flat_sources:
+                    if source.url not in seen_urls:
+                        unique_sources.append(source)
+                        seen_urls.add(source.url)
+
+                valid_scores = [
+                    source.credibility_score for source in unique_sources if source.credibility_score is not None
+                ]
+
+                avg_source_cred = sum(valid_scores) / len(valid_scores) if valid_scores else 0.0
+
+                successes.append({
+                    "claim_id": str(claim_id),
+                    "analysis_id": str(analysis.id),
+                    "batch_user_id": claim.batch_user_id,
+                    "batch_post_id": claim.batch_post_id,
+                    "veracity_score": analysis.veracity_score,
+                    "average_source_credibility": avg_source_cred,
+                    "num_sources": len(valid_scores),
+                })
+            except Exception as e:
+                failures.append({
+                    "claim_id": str(claim.id),
+                    "status": "error",
+                    "message": str(e),
+                })
+                continue
+
+        return {"successes": successes, "failures": failures}
+
+
