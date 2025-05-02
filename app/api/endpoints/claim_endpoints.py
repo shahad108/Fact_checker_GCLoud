@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from typing import Optional, List
 from uuid import UUID
 import logging
@@ -14,6 +14,7 @@ from app.schemas.claim_schema import (
     ClaimStatusUpdate,
     WordCloudRequest,
     BatchAnalysisResponse,
+    BatchResponse,
 )
 from app.services.claim_service import ClaimService
 from app.services.analysis_orchestrator import AnalysisOrchestrator
@@ -47,76 +48,27 @@ async def create_claim(
         )
 
 
-@router.post("/batch", response_model=BatchAnalysisResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/batch", response_model=BatchResponse, status_code=status.HTTP_200_OK)
 async def create_claims_batch(
     claims: List[ClaimCreate],
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     claim_service: ClaimService = Depends(get_claim_service),
     analysis_orchestrator: AnalysisOrchestrator = Depends(get_orchestrator_service),
-) -> BatchAnalysisResponse:
+) -> BatchResponse:
     if len(claims) > 100:
         raise HTTPException(status_code=400, detail="Maximum of 100 claims allowed.")
 
     try:
         created_claims = await claim_service.create_claims_batch(claims, current_user.id)
-
-        successes = []
-        failures = []
-        for claim in created_claims:
-            try:
-                result = await analysis_orchestrator.analyze_claim_direct(claim.id, current_user.id)
-                analysis = result.get("analysis")
-
-                searches = []
-                if analysis.searches:
-                    searches = analysis.searches
-                sources = []
-                for search in searches:
-                    if search.sources:
-                        sources.append(search.sources)
-
-                flat_sources = [item for sublist in sources for item in sublist]
-
-                seen_urls = set()
-                unique_sources = []
-
-                for source in flat_sources:
-                    if source.url not in seen_urls:
-                        unique_sources.append(source)
-                        seen_urls.add(source.url)
-
-                valid_scores = [
-                    source.credibility_score for source in unique_sources if source.credibility_score is not None
-                ]
-
-                avg_source_cred = 0.0
-                if valid_scores:
-                    avg_source_cred = sum(valid_scores) / len(valid_scores)
-
-                successes.append(
-                    {
-                        "claim_id": str(claim.id),
-                        "analysis_id": str(analysis.id),
-                        "batch_user_id": claim.batch_user_id,
-                        "batch_post_id": claim.batch_post_id,
-                        "veracity_score": analysis.veracity_score,
-                        "average_source_credibility": avg_source_cred,
-                        "num_sources": len(valid_scores),
-                    }
-                )
-            except Exception as e:
-                failures.append(
-                    {
-                        "claim_id": str(claim.id),
-                        "status": "error",
-                        "message": str(e),
-                    }
-                )
-        return {"successes": successes, "failures": failures}
-
+        claim_ids = [str(claim.id) for claim in created_claims]
+        background_tasks.add_task(
+            claim_service.process_claims_batch_async, created_claims, current_user.id, analysis_orchestrator
+        )
+        return {"message": f"Processing {len(created_claims)} claims in the background.", "claim_ids": claim_ids}
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to process batch: {str(e)}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to queue batch: {str(e)}"
         )
 
 
@@ -156,6 +108,19 @@ async def get_claim(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to access this claim")
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to get claim: {str(e)}")
+
+
+@router.post("/batch/results", response_model=BatchAnalysisResponse, summary="Get a batch results")
+async def get_batch_results(
+    claim_ids: List[UUID],
+    claim_service: ClaimService = Depends(get_claim_service),
+):
+    try:
+        return await claim_service.get_analysis_results_for_claim_ids(claim_ids=claim_ids)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to get analysis for claims: {str(e)}"
+        )
 
 
 @router.patch("/{claim_id}/status", response_model=ClaimRead, summary="Update claim status")
