@@ -71,6 +71,8 @@ class SuccessResult(BaseModel):
 
 class FailureResult(BaseModel):
     claim_id: UUID
+    batch_user_id: str
+    batch_post_id: str
     status: str
     message: str
 
@@ -78,6 +80,7 @@ class FailureResult(BaseModel):
 class BatchAnalysisResponse(BaseModel):
     successes: List[SuccessResult]
     failures: List[FailureResult]
+    pending: List[FailureResult]
 
 
 class BatchResponse(BaseModel):

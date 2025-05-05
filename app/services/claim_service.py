@@ -282,6 +282,7 @@ class ClaimService:
     async def get_analysis_results_for_claim_ids(self, claim_ids: List[UUID]):
         successes = []
         failures = []
+        pending = []
 
         for claim_id in claim_ids:
             try:
@@ -291,6 +292,8 @@ class ClaimService:
                     failures.append(
                         {
                             "claim_id": str(claim_id),
+                            "batch_user_id": "None",
+                            "batch_post_id": "None",
                             "status": "error",
                             "message": "claim ID not in the database",
                         }
@@ -299,11 +302,26 @@ class ClaimService:
                 analysis = await self._analysis_repo.get_latest_by_claim(
                     claim_id=claim_id, include_searches=True, include_sources=True
                 )
-                if analysis.status != "completed":
+
+                if analysis is None or analysis.status in ("pending", "processing"):
+                    pending.append(
+                        {
+                            "claim_id": str(claim_id),
+                            "batch_user_id": str(claim.batch_user_id) if claim.batch_user_id else "None",
+                            "batch_post_id": str(claim.batch_post_id) if claim.batch_post_id else "None",
+                            "status": "incomplete",
+                            "message": "analysis not started, waiting",
+                        }
+                    )
+                    continue
+
+                if analysis.status in ("failed", "disputed"):
                     failures.append(
                         {
                             "claim_id": str(claim_id),
-                            "status": "incomplete",
+                            "batch_user_id": str(claim.batch_user_id) if claim.batch_user_id else "None",
+                            "batch_post_id": str(claim.batch_post_id) if claim.batch_post_id else "None",
+                            "status": "failed",
                             "message": f"analysis not completed, in state {analysis.status}",
                         }
                     )
@@ -340,10 +358,12 @@ class ClaimService:
                 failures.append(
                     {
                         "claim_id": str(claim.id),
+                        "batch_user_id": claim.batch_user_id if claim.batch_user_id else "None",
+                        "batch_post_id": claim.batch_post_id if claim.batch_post_id else "None",
                         "status": "error",
                         "message": str(e),
                     }
                 )
                 continue
 
-        return {"successes": successes, "failures": failures}
+        return {"successes": successes, "failures": failures, "pending": pending}

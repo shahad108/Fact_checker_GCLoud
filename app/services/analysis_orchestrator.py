@@ -141,6 +141,8 @@ class AnalysisOrchestrator:
                             ),
                         ]
                     else:
+                        current_analysis.status = AnalysisStatus.failed.value
+                        updated_analysis = await self._analysis_repo.update(current_analysis)
                         raise ValidationError("Claim Language is invalid")
 
                     continue
