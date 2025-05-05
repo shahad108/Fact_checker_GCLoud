@@ -303,7 +303,6 @@ class ClaimService:
                     claim_id=claim_id, include_searches=True, include_sources=True
                 )
 
-
                 if analysis is None or analysis.status in ("pending", "processing"):
                     pending.append(
                         {
@@ -311,7 +310,7 @@ class ClaimService:
                             "batch_user_id": str(claim.batch_user_id) if claim.batch_user_id else "None",
                             "batch_post_id": str(claim.batch_post_id) if claim.batch_post_id else "None",
                             "status": "incomplete",
-                            "message": f"analysis not started, waiting",
+                            "message": "analysis not started, waiting",
                         }
                     )
                     continue
@@ -367,4 +366,4 @@ class ClaimService:
                 )
                 continue
 
-        return {"successes": successes, "failures": failures, "pending": pending }
+        return {"successes": successes, "failures": failures, "pending": pending}
