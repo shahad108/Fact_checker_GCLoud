@@ -58,9 +58,12 @@ export default function SourcesPanel({ claim }: SourcesPanelProps) {
 
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {sources.map((source, index) => (
-              <div
+              <a
                 key={index}
-                className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 hover:border-primary transition-all cursor-pointer hover-lift"
+                href={source.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block border border-gray-200 rounded-lg p-3 hover:bg-gray-50 hover:border-primary transition-all cursor-pointer hover-lift"
               >
                 <div className="flex items-start justify-between mb-2">
                   <Badge 
@@ -69,19 +72,19 @@ export default function SourcesPanel({ claim }: SourcesPanelProps) {
                   >
                     Credibility: {source.credibilityScore}%
                   </Badge>
-                  <ExternalLink className="w-4 h-4 text-gray-400" />
+                  <ExternalLink className="w-4 h-4 text-primary" />
                 </div>
-                <h4 className="font-semibold text-gray-900 text-sm mb-1">
+                <h4 className="font-semibold text-gray-900 text-sm mb-1 hover:text-primary">
                   {source.title}
                 </h4>
                 <p className="text-xs text-gray-600 mb-2 line-clamp-2">
                   {source.excerpt}
                 </p>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-primary">{source.domain}</span>
-                  <span className="text-xs text-gray-500">Recently verified</span>
+                  <span className="text-xs text-primary font-medium">{source.domain}</span>
+                  <span className="text-xs text-gray-500">Click to view source</span>
                 </div>
-              </div>
+              </a>
             ))}
           </div>
         </CardContent>
