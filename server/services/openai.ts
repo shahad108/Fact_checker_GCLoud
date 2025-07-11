@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { AnalysisResult, analysisResultSchema } from "@shared/schema";
+import { searchService } from "./search";
 
 // Using OpenRouter for access to various AI models
 const openai = new OpenAI({ 
@@ -20,6 +21,15 @@ export async function analyzeClaim(
   } = {}
 ): Promise<AnalysisResult> {
   try {
+    let realSources: any[] = [];
+    
+    // Fetch real sources if real-time sources are enabled
+    if (options.realTimeSources) {
+      console.log("Fetching real sources for claim:", claimText);
+      realSources = await searchService.searchClaim(claimText);
+      console.log(`Found ${realSources.length} real sources`);
+    }
+
     const systemPrompt = `You are an advanced fact-checking AI system. Analyze the given claim and provide a comprehensive verification report in JSON format.
 
 Your analysis should include:
@@ -31,6 +41,13 @@ Your analysis should include:
 6. Recency score (0-100) based on how current the information is
 7. Confidence level (low/medium/high)
 8. A list of relevant sources with credibility scores
+
+${realSources.length > 0 ? `
+REAL SOURCES FOUND:
+${realSources.map(source => `- ${source.title} (${source.domain}): ${source.snippet}`).join('\n')}
+
+Base your analysis on these real sources when possible. Use their credibility scores and content to inform your reliability assessment.
+` : ''}
 
 Be thorough, objective, and base your analysis on verifiable information. If you cannot verify a claim, explain why and what additional information would be needed.
 
@@ -75,12 +92,23 @@ Please provide a comprehensive fact-check analysis.`;
 
     const rawResult = JSON.parse(response.choices[0].message.content || "{}");
     
+    // If we have real sources, prefer them over AI-generated ones
+    if (realSources.length > 0) {
+      rawResult.sources = realSources.map(source => ({
+        title: source.title,
+        url: source.url,
+        domain: source.domain,
+        credibilityScore: source.credibilityScore,
+        excerpt: source.snippet
+      }));
+    }
+    
     // Validate the result against our schema
     const result = analysisResultSchema.parse(rawResult);
     
     return result;
   } catch (error) {
-    console.error("OpenAI analysis failed:", error);
+    console.error("Analysis failed:", error);
     throw new Error(`Failed to analyze claim: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

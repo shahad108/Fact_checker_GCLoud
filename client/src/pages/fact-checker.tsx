@@ -117,7 +117,7 @@ export default function FactChecker() {
     submitClaimMutation.mutate({
       text: inputText,
       deepAnalysis: false,
-      realTimeSources: false,
+      realTimeSources: true, // Enable real Google search by default
       analysisType: "standard",
     });
     

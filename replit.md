@@ -39,11 +39,13 @@ Design preference: Clean, modern chat interface with professional styling.
 
 ### AI Analysis System
 - Uses OpenRouter API to access DeepSeek R1 model for claim verification
-- Provides reliability scores (0-100) based on evidence
+- **Real Google Search Integration**: Automatically searches Google for authentic sources
+- Provides reliability scores (0-100) based on evidence from real sources
 - Generates detailed analysis with source quality assessment
 - Includes bias detection and recency scoring
-- Returns structured JSON responses with source citations
+- Returns structured JSON responses with verified source citations
 - Real-time analysis with chat-like interface
+- Credibility scoring based on trusted domain lists (Reuters, BBC, etc.)
 
 ### Storage Layer
 - **IStorage Interface**: Abstracts data persistence operations
@@ -55,15 +57,19 @@ Design preference: Clean, modern chat interface with professional styling.
 1. **Claim Submission**: User enters claim text in chat interface
 2. **Message History**: Chat messages are stored in component state for conversation flow
 3. **Initial Processing**: Claim is stored with "pending" status
-4. **AI Analysis**: OpenRouter API analyzes the claim and returns structured results
-5. **Data Persistence**: Analysis results are stored with reliability scores and sources
-6. **Real-time Updates**: Frontend polls for analysis completion every 2 seconds
-7. **Results Display**: User sees comprehensive analysis card with visual reliability indicators in chat
+4. **Google Search**: System searches Google for real sources related to the claim
+5. **Source Analysis**: Found sources are analyzed for credibility and relevance
+6. **AI Analysis**: DeepSeek R1 analyzes the claim using real sources and returns structured results
+7. **Data Persistence**: Analysis results are stored with reliability scores and verified sources
+8. **Real-time Updates**: Frontend polls for analysis completion every 2 seconds
+9. **Results Display**: User sees comprehensive analysis with real source verification in chat
 
 ## Recent Changes (January 2025)
 
 - **Chat Interface**: Redesigned the main interface to use a conversational chat pattern similar to modern AI assistants
 - **OpenRouter Integration**: Updated AI service to use OpenRouter API with DeepSeek R1 model for better analysis
+- **Google Search Integration**: Added real-time Google search to fetch authentic sources for verification
+- **Source Credibility System**: Implemented domain-based credibility scoring with trusted news sources
 - **Visual Improvements**: Enhanced color scheme with blue-purple gradients and improved typography
 - **Message System**: Implemented chat message history with user/assistant/analysis message types
 - **Real-time Updates**: Added polling system for live analysis updates in chat interface
