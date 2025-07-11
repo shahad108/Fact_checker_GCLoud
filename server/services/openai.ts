@@ -63,7 +63,7 @@ Real-time sources: ${options.realTimeSources ? "enabled" : "disabled"}
 Please provide a comprehensive fact-check analysis.`;
 
     const response = await openai.chat.completions.create({
-      model: "openai/gpt-4o",
+      model: "deepseek/deepseek-r1-0528",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
@@ -94,7 +94,7 @@ ${sources.map(source => `- ${source.title} (${source.domain}): ${source.excerpt}
 Provide a concise summary of what these sources collectively say about the claim.`;
 
     const response = await openai.chat.completions.create({
-      model: "openai/gpt-4o",
+      model: "deepseek/deepseek-r1-0528",
       messages: [
         { role: "user", content: prompt }
       ],

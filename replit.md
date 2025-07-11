@@ -27,7 +27,7 @@ Design preference: Clean, modern chat interface with professional styling.
 - **Language**: TypeScript with ES modules
 - **Database**: PostgreSQL with Drizzle ORM (using in-memory storage for development)
 - **Database Provider**: Neon Database (@neondatabase/serverless)
-- **AI Integration**: OpenRouter API for claim analysis using GPT-4o
+- **AI Integration**: OpenRouter API for claim analysis using DeepSeek R1
 - **Session Management**: Express sessions with PostgreSQL storage
 
 ## Key Components
@@ -38,7 +38,7 @@ Design preference: Clean, modern chat interface with professional styling.
 - **Sources**: Stores reference sources for claims with credibility scores and metadata
 
 ### AI Analysis System
-- Uses OpenRouter API to access GPT-4o model for claim verification
+- Uses OpenRouter API to access DeepSeek R1 model for claim verification
 - Provides reliability scores (0-100) based on evidence
 - Generates detailed analysis with source quality assessment
 - Includes bias detection and recency scoring
@@ -63,7 +63,7 @@ Design preference: Clean, modern chat interface with professional styling.
 ## Recent Changes (January 2025)
 
 - **Chat Interface**: Redesigned the main interface to use a conversational chat pattern similar to modern AI assistants
-- **OpenRouter Integration**: Updated AI service to use OpenRouter API instead of direct OpenAI for better model access
+- **OpenRouter Integration**: Updated AI service to use OpenRouter API with DeepSeek R1 model for better analysis
 - **Visual Improvements**: Enhanced color scheme with blue-purple gradients and improved typography
 - **Message System**: Implemented chat message history with user/assistant/analysis message types
 - **Real-time Updates**: Added polling system for live analysis updates in chat interface
