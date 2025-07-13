@@ -3,6 +3,10 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { analyzeClaim } from "./services/openai";
 import { insertClaimSchema } from "@shared/schema";
+import { exec } from "child_process";
+import { promisify } from "util";
+
+const execAsync = promisify(exec);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get current user (simplified - in real app would use authentication)
@@ -134,6 +138,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch sources" });
     }
   });
+
+  // Proxy endpoint for authenticated backend requests
+  app.all("/api/backend/*", async (req, res) => {
+    try {
+      // Get Google Cloud Identity Token
+      const { stdout: token } = await execAsync('gcloud auth print-identity-token');
+      const identityToken = token.trim();
+
+      // Get backend URL from environment
+      const backendUrl = process.env.VITE_BACKEND_URL || 'https://wahrify-backend-1010886348729.europe-west1.run.app';
+      
+      // Extract the backend path (remove /api/backend prefix)
+      const backendPath = req.path.replace('/api/backend', '');
+      const fullUrl = `${backendUrl}${backendPath}`;
+
+      // Forward the request to the backend with authentication
+      const response = await fetch(fullUrl, {
+        method: req.method,
+        headers: {
+          'Authorization': `Bearer ${identityToken}`,
+          'Content-Type': 'application/json',
+          ...(req.headers as Record<string, string>)
+        },
+        body: req.method !== 'GET' && req.method !== 'HEAD' ? JSON.stringify(req.body) : undefined,
+      });
+
+      // Forward the response
+      const responseData = await response.text();
+      res.status(response.status);
+      
+      // Set response headers
+      response.headers.forEach((value: string, key: string) => {
+        res.setHeader(key, value);
+      });
+
+      // Send response
+      res.send(responseData);
+    } catch (error) {
+      console.error('Backend proxy error:', error);
+      res.status(500).json({
+        error: 'Backend proxy failed',
+        detail: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Note: /v1 endpoints can now be accessed via /api/backend/v1/* with authentication
 
   const httpServer = createServer(app);
   return httpServer;

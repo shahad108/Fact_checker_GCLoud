@@ -2,8 +2,10 @@ import express, { type Request, Response, NextFunction } from "express";
 import { createServer } from "http";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import { registerRoutes } from "./routes";
+import fs from "fs";
+import path from "path";
 
-// Simple log function that doesn't depend on vite
+// Simple log function
 function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
     hour: "numeric",
@@ -102,16 +104,21 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    const { setupVite } = await import("./vite");
-    await setupVite(app, server);
-  } else {
-    const { serveStatic } = await import("./vite.production");
-    serveStatic(app);
+  // Serve static files in production
+  const distPath = path.resolve(import.meta.dirname, "public");
+
+  if (!fs.existsSync(distPath)) {
+    throw new Error(
+      `Could not find the build directory: ${distPath}, make sure to build the client first`,
+    );
   }
+
+  app.use(express.static(distPath));
+
+  // fall through to index.html if the file doesn't exist
+  app.use("*", (_req, res) => {
+    res.sendFile(path.resolve(distPath, "index.html"));
+  });
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
   // Default to 3000 for development.

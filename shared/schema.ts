@@ -2,6 +2,44 @@ import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzl
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Backend API types (matching PostgreSQL schema)
+export const backendClaimSchema = z.object({
+  id: z.string().uuid(),
+  user_id: z.string().uuid(),
+  claim_text: z.string(),
+  context: z.string(),
+  status: z.enum(["pending", "analyzing", "analyzed", "disputed", "verified", "rejected", "failed"]),
+  language: z.string(),
+  created_at: z.string().datetime(),
+  updated_at: z.string().datetime(),
+  batch_user_id: z.string().nullable().optional(),
+  batch_post_id: z.string().nullable().optional(),
+  embedding: z.array(z.number()).nullable().optional(),
+});
+
+export const backendSourceSchema = z.object({
+  id: z.string().uuid(),
+  search_id: z.string().uuid().optional(), // May not be included in flattened response
+  url: z.string(),
+  title: z.string(),
+  snippet: z.string(),
+  credibility_score: z.number().min(0).max(1).nullable().optional(),
+  domain_name: z.string().optional(), // Flattened from domain object
+  domain_credibility: z.number().min(0).max(1).optional(), // Flattened from domain object
+  created_at: z.string().datetime().optional(),
+  updated_at: z.string().datetime().optional(),
+});
+
+export const backendAnalysisSchema = z.object({
+  id: z.string().uuid(),
+  claim_id: z.string().uuid(),
+  veracity_score: z.number().min(0).max(1),
+  confidence_score: z.number().min(0).max(1),
+  analysis_text: z.string(),
+  created_at: z.string().datetime(),
+  sources: z.array(backendSourceSchema).optional(), // Sources now included in analysis response
+});
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -45,6 +83,15 @@ export const insertUserSchema = createInsertSchema(users).pick({
   name: true,
 });
 
+// Backend API schema alignment
+export const createClaimSchema = z.object({
+  claim_text: z.string().min(1),
+  context: z.string().default(""),
+  language: z.string().default("english"),
+  batch_user_id: z.string().optional(),
+  batch_post_id: z.string().optional(),
+});
+
 export const insertClaimSchema = createInsertSchema(claims).pick({
   text: true,
   deepAnalysis: true,
@@ -63,9 +110,15 @@ export const insertSourceSchema = createInsertSchema(sources).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertClaim = z.infer<typeof insertClaimSchema>;
+export type CreateClaim = z.infer<typeof createClaimSchema>;
 export type Claim = typeof claims.$inferSelect;
 export type InsertSource = z.infer<typeof insertSourceSchema>;
 export type Source = typeof sources.$inferSelect;
+
+// Backend API types
+export type BackendClaim = z.infer<typeof backendClaimSchema>;
+export type BackendAnalysis = z.infer<typeof backendAnalysisSchema>;
+export type BackendSource = z.infer<typeof backendSourceSchema>;
 
 export const analysisResultSchema = z.object({
   reliabilityScore: z.number().min(0).max(100),

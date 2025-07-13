@@ -190,6 +190,15 @@
   animation: pulse 3s infinite;
 }
 
+/* Animation delays for staggered effects */
+.animation-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animation-delay-400 {
+  animation-delay: 400ms;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
