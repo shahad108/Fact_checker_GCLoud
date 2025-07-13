@@ -165,4 +165,14 @@ Main application page featuring:
 
 ## 📄 License
 
-This project is part of the Wahrify fact-checking platform.
+**PROPRIETARY SOFTWARE - ALL RIGHTS RESERVED**
+
+© 2024 Wahrify.de - All Rights Reserved.
+
+This software is the exclusive property of Wahrify.de and is protected by copyright laws and international treaty provisions. No part of this software may be used, reproduced, distributed, or transmitted in any form or by any means without the prior written permission of Wahrify.de.
+
+**UNAUTHORIZED USE IS STRICTLY PROHIBITED**
+
+Any unauthorized use, reproduction, or distribution of this software or any portion of it may result in severe civil and criminal penalties, and will be prosecuted to the fullest extent of the law.
+
+For licensing inquiries, contact: legal@wahrify.de
