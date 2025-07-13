@@ -10,10 +10,10 @@ logger = logging.getLogger(__name__)
 class Settings(BaseSettings):
     DATABASE_URL: Optional[str] = None
     DATABASE_PASSWORD: Optional[str] = None
-    POSTGRES_USER: str = "will"
-    POSTGRES_PASSWORD: str = "nordai123"
+    POSTGRES_USER: str = "dharmendersingh"
+    POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = "mitigation_misinformation_db"
-    POSTGRES_HOST: str = "misinformation_mitigation_db"
+    POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: str = "5432"
 
     VERTEX_AI_LOCATION: str = "us-central1"
@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     GOOGLE_SEARCH_ENGINE_ID: str = ""
 
     LLAMA_MODEL_NAME: str = "meta/llama-3.3-70b-instruct-maas"
+    
+    OPENROUTER_API_KEY: str = ""
 
     AUTH0_DOMAIN: str = "veri-fact.ca.auth0.com"
     AUTH0_AUDIENCE: str = "https://veri-fact.ca.auth0.com/api/v2/"
@@ -73,6 +75,7 @@ class Settings(BaseSettings):
         print(f"GOOGLE_CLOUD_PROJECT: {self.GOOGLE_CLOUD_PROJECT}")
         print(f"GOOGLE_SEARCH_ENGINE_ID: {self.GOOGLE_SEARCH_ENGINE_ID}")
         print(f"Google Search API configured: {bool(self.GOOGLE_SEARCH_API_KEY)}")
+        print(f"OpenRouter API configured: {bool(self.OPENROUTER_API_KEY)}")
         print(f"LLAMA_MODEL_NAME: {self.LLAMA_MODEL_NAME}")
         print("=====================================\n")
 

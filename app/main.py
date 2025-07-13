@@ -47,7 +47,10 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://misinformation-mitigation-ui.vercel.app",
-        "http://localhost:3000",
+        "http://localhost:3000",  # WahrifyUI frontend (development)
+        "http://frontend:3000",   # WahrifyUI frontend (Docker)
+        "https://wahrify-fact-checker.web.app",  # Firebase Hosting (production)
+        "https://wahrify-fact-checker.firebaseapp.com",  # Firebase Hosting (alternative)
         "https://www.veri-fact.ai",
         "https://veracity-eval-frontend-git-g0frontend-complex-data-lab.vercel.app",
         "https://veracity-eval-frontend-git-g1frontend-complex-data-lab.vercel.app",

@@ -2,6 +2,7 @@ from typing import List, Optional
 import aiohttp
 from datetime import UTC, datetime
 import logging
+import json
 from uuid import UUID, uuid4
 from app.core.config import settings
 from sqlalchemy.exc import IntegrityError
@@ -28,7 +29,11 @@ class GoogleWebSearchService(WebSearchServiceInterface):
         self, claim_text: str, search_id: UUID, num_results: int = 5, language: str = "english"
     ) -> List[SourceModel]:
         """Search for sources and create or update records."""
+        logger.info(f"🔍 Starting web search for claim: {claim_text[:50]}...")
+        logger.info(f"Search ID: {search_id}, Language: {language}")
+        
         try:
+            # Base parameters for Google Custom Search API
             params = {
                 "key": self.api_key,
                 "cx": self.search_engine_id,
@@ -36,55 +41,62 @@ class GoogleWebSearchService(WebSearchServiceInterface):
                 "num": min(num_results, 10),
                 "fields": "items(title,link,snippet)",
             }
+            
+            # Add language restriction if specified
             if language == "english":
-                params = {
-                    "key": self.api_key,
-                    "cx": self.search_engine_id,
-                    "q": claim_text,
-                    "num": min(num_results, 10),
-                    "fields": "items(title,link,snippet)",
-                    "lr": "lang_en",
-                }
+                params["lr"] = "lang_en"
             elif language == "french":
-                params = {
-                    "key": self.api_key,
-                    "cx": self.search_engine_id,
-                    "q": claim_text,
-                    "num": min(num_results, 10),
-                    "fields": "items(title,link,snippet)",
-                    "lr": "lang_fr",
-                }
+                params["lr"] = "lang_fr"
 
             sources = []
+            logger.info(f"📡 Calling Google Search API with query: {params['q']}")
+            logger.info(f"🔧 API Parameters: {json.dumps(params, indent=2)}")
+            logger.info(f"🌐 Full URL: {self.search_endpoint}")
+            
             async with aiohttp.ClientSession() as session:
                 async with session.get(self.search_endpoint, params=params) as response:
+                    logger.info(f"📊 Google API Response Status: {response.status}")
+                    
                     if response.status != 200:
                         error_text = await response.text()
-                        logger.error(f"Search API error: {error_text}")
+                        logger.error(f"❌ Search API error ({response.status}): {error_text}")
+                        logger.error(f"🔧 Failed with parameters: {json.dumps(params, indent=2)}")
+                        logger.error(f"🌐 Request URL: {response.url}")
                         return []
 
                     data = await response.json()
                     if "items" not in data:
-                        logger.warning("No search results found")
+                        logger.warning("⚠️ No search results found in response")
+                        logger.debug(f"Response data: {json.dumps(data, indent=2)}")
                         return []
 
-                    for item in data["items"]:
+                    logger.info(f"✅ Found {len(data['items'])} search results")
+                    
+                    for i, item in enumerate(data["items"]):
                         try:
+                            logger.debug(f"📌 Processing result {i+1}: {item['title'][:50]}...")
                             domain_name = normalize_domain_name(item["link"])
+                            logger.debug(f"Domain name: {domain_name}")
+                            
                             domain, is_new = await self.domain_service.get_or_create_domain(domain_name)
 
                             if is_new:
-                                logger.info(f"Created new domain record for: {domain_name}")
+                                logger.info(f"🆕 Created new domain record for: {domain_name}")
+                            else:
+                                logger.debug(f"♻️ Using existing domain: {domain_name}")
 
                             source = await self._create_new_source(item, search_id, domain.id, domain.credibility_score)
                             if source:
                                 sources.append(source)
-                                logger.debug(f"Created new source for URL: {item['link']}")
+                                logger.info(f"✅ Created source #{len(sources)} for URL: {item['link']}")
+                            else:
+                                logger.warning(f"⚠️ Failed to create source for: {item['link']}")
 
                         except Exception as e:
-                            logger.error(f"Error processing search result: {str(e)}", exc_info=True)
+                            logger.error(f"❌ Error processing search result {i+1}: {str(e)}", exc_info=True)
                             continue
 
+            logger.info(f"📊 Total sources created: {len(sources)}")
             return sources
 
         except Exception as e:
@@ -106,6 +118,7 @@ class GoogleWebSearchService(WebSearchServiceInterface):
         self, item: dict, search_id: UUID, domain_id: UUID, credibility_score: float
     ) -> Optional[SourceModel]:
         try:
+            logger.debug(f"🔨 Creating source object for: {item['link']}")
             source = SourceModel(
                 id=uuid4(),
                 search_id=search_id,
@@ -118,12 +131,20 @@ class GoogleWebSearchService(WebSearchServiceInterface):
                 created_at=datetime.now(UTC),
                 updated_at=datetime.now(UTC),
             )
-            return await self.source_repository.create_with_domain(source)
-        except IntegrityError:
-            logger.warning(f"Race condition creating source for URL: {item['link']}")
+            logger.debug(f"💾 Saving source to database...")
+            created_source = await self.source_repository.create_with_domain(source)
+            logger.info(f"✅ Successfully saved source: {source.id}")
+            return created_source
+        except IntegrityError as e:
+            logger.warning(f"⚠️ Race condition creating source for URL: {item['link']}")
+            logger.debug(f"IntegrityError details: {str(e)}")
             existing = await self._get_existing_source(item["link"])
             if existing:
+                logger.info(f"♻️ Updating existing source instead")
                 return await self._update_source_analysis(existing, search_id, credibility_score)
+            return None
+        except Exception as e:
+            logger.error(f"❌ Unexpected error creating source: {str(e)}", exc_info=True)
             return None
 
     def format_sources_for_prompt(self, sources: List[SourceModel], language: str = "english") -> str:

@@ -31,26 +31,28 @@ def upgrade() -> None:
     """
     )
 
-    op.execute(
-        """
-        INSERT INTO social_media_clients (auth0_id, platform)
-        VALUES ('I1eyLfAX26wlOMiY4n5SxWOsWrSNXLWU@clients', 'BlueSky');
-    """
-    )
+    # Note: Commenting out test data inserts that cause foreign key violations
+    # These should only be inserted after the corresponding users exist
+    # op.execute(
+    #     """
+    #     INSERT INTO social_media_clients (auth0_id, platform)
+    #     VALUES ('I1eyLfAX26wlOMiY4n5SxWOsWrSNXLWU@clients', 'BlueSky');
+    # """
+    # )
 
-    op.execute(
-        """
-        INSERT INTO social_media_clients (auth0_id, platform)
-        VALUES ('K46Fnu6E21BG0x3KfNknffbKdTbOHlzw@clients', 'X');
-    """
-    )
+    # op.execute(
+    #     """
+    #     INSERT INTO social_media_clients (auth0_id, platform)
+    #     VALUES ('K46Fnu6E21BG0x3KfNknffbKdTbOHlzw@clients', 'X');
+    # """
+    # )
 
-    op.execute(
-        """
-        INSERT INTO social_media_clients (auth0_id, platform)
-        VALUES ('GbaexhSrWJnbX19M4HYuGH87ROyzwJne@clients', 'Reddit');
-    """
-    )
+    # op.execute(
+    #     """
+    #     INSERT INTO social_media_clients (auth0_id, platform)
+    #     VALUES ('GbaexhSrWJnbX19M4HYuGH87ROyzwJne@clients', 'Reddit');
+    # """
+    # )
 
 
 def downgrade() -> None:

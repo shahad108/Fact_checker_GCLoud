@@ -28,7 +28,7 @@ from app.core.llm.prompts import AnalysisPrompt
 
 logger = logging.getLogger(__name__)
 
-MAX_NUM_TURNS: int = 10
+MAX_NUM_TURNS: int = 3  # Reduced from 10 for faster analysis (15-45 sec instead of 5+ min)
 MAX_SEARCH_RESULTS: int = 10
 
 
@@ -144,6 +144,11 @@ class AnalysisOrchestrator:
                         current_analysis.status = AnalysisStatus.failed.value
                         updated_analysis = await self._analysis_repo.update(current_analysis)
                         raise ValidationError("Claim Language is invalid")
+
+                    # Early termination: if we have enough high-quality sources, stop searching
+                    if len(all_sources) >= 8:  # If we have 8+ sources total
+                        logger.info(f"Early termination: Found {len(all_sources)} sources, sufficient for analysis")
+                        break
 
                     continue
                 else:

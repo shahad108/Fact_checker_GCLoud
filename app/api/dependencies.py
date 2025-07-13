@@ -7,6 +7,7 @@ from typing import AsyncGenerator
 
 from app.core.auth.auth0_middleware import Auth0Middleware
 from app.core.llm.vertex_ai_llama import VertexAILlamaProvider
+from app.core.llm.openrouter_provider import OpenRouterProvider
 from app.db.session import get_session
 from app.models.domain.user import User
 from app.repositories.implementations.claim_conversation_repository import ClaimConversationRepository
@@ -158,8 +159,16 @@ async def get_feedback_service(
 
 async def get_llm_provider():
     try:
-        provider = VertexAILlamaProvider(settings)
-        return provider
+        # Try OpenRouter first if API key exists
+        if settings.OPENROUTER_API_KEY:
+            logger.info("Using OpenRouter LLM provider")
+            provider = OpenRouterProvider(settings)
+            return provider
+        else:
+            # Fall back to Vertex AI
+            logger.info("Using Vertex AI LLM provider")
+            provider = VertexAILlamaProvider(settings)
+            return provider
     except Exception as e:
         logger.error(f"Failed to initialize LLM provider: {str(e)}", exc_info=True)
         raise
@@ -183,8 +192,6 @@ async def get_orchestrator_service(
     web_search_service: WebSearchServiceInterface = Depends(get_web_search_service),
     llm_provider=Depends(get_llm_provider),
 ) -> AnalysisOrchestrator:
-    llm_provider = VertexAILlamaProvider(settings)
-
     return AnalysisOrchestrator(
         claim_repo=claim_repository,
         analysis_repo=analysis_repository,
