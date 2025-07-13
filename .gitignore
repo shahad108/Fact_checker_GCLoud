@@ -1,6 +1,133 @@
-node_modules
-dist
+# Python
+venv/
+__pycache__/
+*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Node.js Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+frontend/dist/
+frontend/node_modules/
+
+# Environment files
+.env
+.env.local
+.env.global
+.env.base
+.env.development
+.env.production
+.localenv
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+backend.log
+backend_debug.log
+backend_fresh.log
+
+# Cache
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Google Cloud & Infrastructure
+service-account.json
+gcloud-key.json
+*-service-account.json
+infrastructure/terraform/.terraform
+infrastructure/terraform/errored.tfstate
+infrastructure/terraform/*.tfstate
+infrastructure/terraform/*.tfstate.*
+infrastructure/terraform/.terraform.lock.hcl
+
+# System files
 .DS_Store
+.DS_Store?
+Thumbs.db
+get-pip.py
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Database
+*.db
+*.sqlite
+
+# Secrets and credentials
+secrets/
+credentials/
+keys/
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+*.tmp
+*.bak
+*.backup
+*.old
+
+# Machine Learning models (if locally cached)
+models/
+*.pkl
+*.joblib
+*.model
+
+# Reports and documentation builds
+reports/
+analytics/
+metrics/
+docs/_build/
+
+# Task management
+tasks/todo.md
+tasks/notes.md
+backend-frontend-configuration-report.md
+
+# Docker development
+Dockerfile.dev
+docker-compose.override.yml
+docker-compose.dev.yml
+
+# OS generated
+Icon?
+.AppleDouble
+.LSOverride
+._*
+.Trashes
+.VolumeIcon.icns
+.fseventsd
+.Spotlight-V100
+*~
+.fuse_hidden*
+.directory
+.Trash-*

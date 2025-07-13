@@ -1,0 +1,187 @@
+name: Deploy to Google Cloud Run
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  PROJECT_ID: wahrify-fact-checker
+  SERVICE_NAME: wahrify-backend
+  REGION: europe-west1
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-asyncio httpx
+
+    - name: Run linting
+      run: |
+        pip install flake8 black isort mypy
+        flake8 app --count --select=E9,F63,F7,F82 --show-source --statistics
+        black --check app
+        isort --check-only app
+        mypy app --ignore-missing-imports
+
+    - name: Run tests
+      run: |
+        pytest tests/ -v --tb=short
+      env:
+        PYTHONPATH: ./
+        DATABASE_URL: sqlite:///test.db
+        GOOGLE_SEARCH_API_KEY: test_key
+        GOOGLE_SEARCH_ENGINE_ID: test_engine
+        OPENROUTER_API_KEY: test_openrouter_key
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: test
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Google Auth
+      id: auth
+      uses: google-github-actions/auth@v1
+      with:
+        token_format: 'access_token'
+        workload_identity_provider: '${{ secrets.WIF_PROVIDER }}'
+        service_account: '${{ secrets.WIF_SERVICE_ACCOUNT }}'
+
+    - name: Docker Auth
+      id: docker-auth
+      uses: docker/login-action@v3
+      with:
+        username: 'oauth2accesstoken'
+        password: '${{ steps.auth.outputs.access_token }}'
+        registry: '${{ env.REGION }}-docker.pkg.dev'
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+
+    - name: Build and push Docker image
+      run: |
+        # Build image
+        docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/wahrify-backend/${{ env.SERVICE_NAME }}:${{ github.sha }} .
+        docker build -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/wahrify-backend/${{ env.SERVICE_NAME }}:latest .
+        
+        # Push image
+        docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/wahrify-backend/${{ env.SERVICE_NAME }}:${{ github.sha }}
+        docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/wahrify-backend/${{ env.SERVICE_NAME }}:latest
+
+    - name: Deploy to Cloud Run
+      id: deploy
+      uses: google-github-actions/deploy-cloudrun@v1
+      with:
+        service: ${{ env.SERVICE_NAME }}
+        region: ${{ env.REGION }}
+        image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/wahrify-backend/${{ env.SERVICE_NAME }}:${{ github.sha }}
+        flags: |
+          --allow-unauthenticated
+          --memory=4Gi
+          --cpu=1
+          --timeout=300
+          --concurrency=80
+          --max-instances=10
+          --set-env-vars=PYTHONPATH=/app
+          --set-secrets=DATABASE_URL=database-url:latest,GOOGLE_SEARCH_API_KEY=google-search-api-key:latest,GOOGLE_SEARCH_ENGINE_ID=google-search-engine-id:latest,OPENROUTER_API_KEY=openrouter-api-key:latest
+          --add-cloudsql-instances=${{ env.PROJECT_ID }}:${{ env.REGION }}:wahrify-db
+
+    - name: Health Check
+      run: |
+        echo "Waiting for deployment to be ready..."
+        sleep 30
+        
+        # Test health endpoint
+        curl -f "${{ steps.deploy.outputs.url }}/v1/health" || exit 1
+        echo "✅ Health check passed"
+        
+        # Test ML health
+        curl -f "${{ steps.deploy.outputs.url }}/v1/health/ml" || exit 1
+        echo "✅ ML health check passed"
+        
+        # Test search health
+        curl -f "${{ steps.deploy.outputs.url }}/v1/health/search" || exit 1
+        echo "✅ Search health check passed"
+
+    - name: Deployment Summary
+      run: |
+        echo "🚀 Deployment successful!"
+        echo "Service URL: ${{ steps.deploy.outputs.url }}"
+        echo "Image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/wahrify-backend/${{ env.SERVICE_NAME }}:${{ github.sha }}"
+        echo "Region: ${{ env.REGION }}"
+        echo "Revision: ${{ steps.deploy.outputs.revision }}"
+
+  # Security scanning job
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # Performance testing job (only on main branch)
+  performance:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Performance Test
+      run: |
+        # Wait for deployment to stabilize
+        sleep 60
+        
+        # Simple performance test
+        echo "Running performance tests..."
+        
+        # Test basic claim analysis
+        time curl -X POST "https://wahrify-backend-1010886348729.europe-west1.run.app/v1/claims/analyze-test" \
+          -H "Content-Type: application/json" \
+          -d '{"claim_text": "Water boils at 100 degrees Celsius", "context": "", "language": "english"}' \
+          --max-time 30
+        
+        echo "✅ Performance test completed"

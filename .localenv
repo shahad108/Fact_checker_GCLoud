@@ -1,0 +1,9 @@
+POSTGRES_USER=taylor
+POSTGRES_PASSWORD=Mila1234
+POSTGRES_DB=mitigation_misinformation_db
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+
+# Google Search API Configuration
+GOOGLE_SEARCH_API_KEY=AIzaSyDiXbItmLiZlddukWRzaWkKvlniDYXbSsg
+GOOGLE_SEARCH_ENGINE_ID=f5b78bbbd6dd74d36
