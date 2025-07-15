@@ -2,14 +2,21 @@ import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Send, User, ArrowUp } from "lucide-react";
+import { Menu, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth0 } from "@auth0/auth0-react";
+import { useLocation } from "wouter";
 import { AutoResizeTextarea } from "@/components/ui/auto-resize-textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import ProgressRing from "@/components/ui/progress-ring";
 import ProgressCircle from "@/components/ui/progress-circle";
+import { FeedbackTrigger } from "@/components/feedback/FeedbackModal";
 import { Claim, CreateClaim, BackendClaim, BackendAnalysis, BackendSource } from "@shared/schema";
+import ChatHistorySidebar from "@/components/chat-history-sidebar";
+import AccountPopup from "@/components/account-popup";
+import { useTheme } from "@/contexts/ThemeContext";
+import { useCreateConversation, useCreateMessage } from "@/hooks/use-conversations";
 
 interface ChatMessage {
   id: string;
@@ -68,9 +75,16 @@ export default function FactChecker() {
     }
   ]);
   const [inputText, setInputText] = useState("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth0();
+  const [, setLocation] = useLocation();
+  const { theme, setTheme } = useTheme();
+  const createConversationMutation = useCreateConversation();
+  const createMessageMutation = useCreateMessage();
 
   // Fetch user data (temporarily commented out until Auth0 is added)
   // const { data: user } = useQuery({
@@ -139,11 +153,29 @@ export default function FactChecker() {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || submitClaimMutation.isPending) return;
 
-    // Add user message
+    // Create conversation if none exists
+    let conversationId = currentConversationId;
+    if (!conversationId) {
+      try {
+        const newConversation = await createConversationMutation.mutateAsync();
+        conversationId = newConversation.id;
+        setCurrentConversationId(conversationId);
+      } catch (error) {
+        console.error("Failed to create conversation:", error);
+        toast({
+          title: "Error",
+          description: "Failed to create conversation. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    // Add user message to UI
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       type: "user",
@@ -151,6 +183,19 @@ export default function FactChecker() {
       timestamp: new Date(),
     };
     setMessages(prev => [...prev, userMessage]);
+    
+    // Save user message to backend
+    if (conversationId) {
+      try {
+        await createMessageMutation.mutateAsync({
+          conversation_id: conversationId,
+          sender_type: "user",
+          content: inputText,
+        });
+      } catch (error) {
+        console.error("Failed to save user message:", error);
+      }
+    }
     
     // Generate unique claim ID for this submission
     const claimSubmissionId = `claim-${Date.now()}`;
@@ -190,6 +235,7 @@ export default function FactChecker() {
   };
 
   const handleNewChat = () => {
+    // Reset to initial state
     setMessages([
       {
         id: "welcome",
@@ -199,6 +245,25 @@ export default function FactChecker() {
       }
     ]);
     setInputText("");
+    setCurrentConversationId(null);
+  };
+
+  const handleConversationSelect = (conversationId: string) => {
+    // TODO: Load messages for the selected conversation
+    setCurrentConversationId(conversationId);
+    setMessages([
+      {
+        id: "welcome",
+        type: "assistant", 
+        content: `Conversation ${conversationId.slice(0, 8)}... loaded`,
+        timestamp: new Date(),
+      }
+    ]);
+    setIsSidebarOpen(false); // Close sidebar on mobile
+  };
+
+  const handleToggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
   };
 
   // 🔧 DEBUG: Force display most recent completed analysis
@@ -346,6 +411,34 @@ export default function FactChecker() {
                   {claim.analysis || "Analysis is being processed..."}
                 </p>
               </div>
+
+              {/* Feedback Call to Action */}
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold text-blue-900 mb-1">Help Us Improve</h4>
+                    <p className="text-sm text-blue-700">Rate this analysis and share your feedback</p>
+                  </div>
+                  <FeedbackTrigger
+                    analysisContext={{
+                      analysisId: `analysis-${claim.id}`,
+                      claimText: claim.text || '',
+                      analysisText: claim.analysis || '',
+                      veracityScore: (claim.reliabilityScore || 0) / 100,
+                      confidenceScore: 0.85,
+                      sources: sources.map(source => ({
+                        id: `source-${source.url}`,
+                        url: source.url,
+                        title: source.title,
+                        credibilityScore: (source.credibilityScore || 0) / 100
+                      }))
+                    }}
+                    variant="default"
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Sources Panel */}
@@ -353,9 +446,27 @@ export default function FactChecker() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900">Sources</h3>
-                  <Button variant="link" className="text-primary p-0 text-sm">
-                    User Guidelines
-                  </Button>
+                  <FeedbackTrigger
+                    analysisContext={{
+                      analysisId: `analysis-${claim.id}`, // Create analysis ID from claim ID
+                      claimText: claim.text || '',
+                      analysisText: claim.analysis || '',
+                      veracityScore: (claim.reliabilityScore || 0) / 100, // Convert percentage back to 0-1 scale
+                      confidenceScore: 0.85, // Default confidence score
+                      sources: sources.map(source => ({
+                        id: `source-${source.url}`,
+                        url: source.url,
+                        title: source.title,
+                        credibilityScore: (source.credibilityScore || 0) / 100 // Convert percentage back to 0-1 scale
+                      }))
+                    }}
+                    variant="link"
+                    size="sm"
+                    showIcon={false}
+                    className="text-primary p-0 text-sm"
+                  >
+                    Submit Feedback
+                  </FeedbackTrigger>
                 </div>
                 
                 <div className="bg-gray-50 rounded-xl p-4">
@@ -407,45 +518,60 @@ export default function FactChecker() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-20">
-        <div className="max-w-screen-xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <h1 className="text-2xl font-bold text-gray-900">Wahrify</h1>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button onClick={forceDisplayLatestAnalysis} variant="outline" size="sm" className="text-xs">
-                🔧 Force Latest
-              </Button>
-              <Button onClick={handleNewChat} className="hover-lift">
-                <Plus className="w-4 h-4 mr-2" />
-                New Chat
-              </Button>
+    <div className="min-h-screen flex bg-background">
+      {/* Chat History Sidebar */}
+      <ChatHistorySidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        onConversationSelect={handleConversationSelect}
+        onNewChat={handleNewChat}
+        currentConversationId={currentConversationId}
+      />
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
+        <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-20">
+          <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="lg:hidden"
+                  onClick={handleToggleSidebar}
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Wahrify</h1>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {/* Account Popup */}
+                <AccountPopup theme={theme} onThemeChange={setTheme} />
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
       {/* Chat Messages */}
       <main className="flex-1 overflow-y-auto">
-        <div className="max-w-screen-xl mx-auto px-6 py-8">
-          <div className="space-y-6">
+        <div className="max-w-screen-xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
+          <div className="space-y-4 sm:space-y-6">
             {messages.map((message) => (
               <div key={message.id} className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}>
                 {message.type === "user" ? (
-                  <div className="bg-green-200 text-gray-800 p-4 rounded-lg rounded-br-none shadow-sm max-w-2xl animate-fade-in">
-                    <p>{message.content}</p>
+                  <div className="chat-bubble chat-bubble-user p-3 sm:p-4 animate-fade-in">
+                    <p className="text-sm sm:text-base">{message.content}</p>
                   </div>
                 ) : message.type === "assistant" ? (
-                  <div className="bg-white p-4 rounded-lg rounded-bl-none border border-gray-200 shadow-sm max-w-2xl animate-fade-in">
-                    <p className="text-gray-700">{message.content}</p>
+                  <div className="chat-bubble chat-bubble-assistant p-3 sm:p-4 animate-fade-in">
+                    <p className="text-sm sm:text-base">{message.content}</p>
                   </div>
                 ) : (
                   <div className="w-full animate-fade-in">
-                    <div className="bg-white p-4 rounded-lg rounded-bl-none border border-gray-200 shadow-sm mb-4 max-w-2xl">
-                      <p className="text-lg font-semibold text-gray-800">{message.content}</p>
+                    <div className="chat-bubble chat-bubble-assistant p-3 sm:p-4 mb-4 max-w-2xl">
+                      <p className="text-base sm:text-lg font-semibold">{message.content}</p>
                     </div>
                     {message.claim && renderAnalysisCard(message.claim)}
                   </div>
@@ -459,7 +585,7 @@ export default function FactChecker() {
 
       {/* Input Footer */}
       <footer className="bg-white/80 backdrop-blur-md border-t border-gray-200 sticky bottom-0">
-        <div className="max-w-xl mx-auto px-6 py-4">
+        <div className="max-w-xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <form onSubmit={handleSubmit}>
             <div className="relative">
               <AutoResizeTextarea
@@ -480,15 +606,16 @@ export default function FactChecker() {
               <Button
                 type="submit"
                 size="sm"
-                className="absolute right-2 bottom-2 rounded-full"
+                className="absolute right-2 bottom-2 rounded-full w-8 h-8 sm:w-9 sm:h-9"
                 disabled={!inputText.trim() || submitClaimMutation.isPending}
               >
-                <ArrowUp className="w-4 h-4" />
+                <ArrowUp className="w-3 h-3 sm:w-4 sm:h-4" />
               </Button>
             </div>
           </form>
         </div>
       </footer>
+      </div>
     </div>
   );
 }

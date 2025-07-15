@@ -7,6 +7,42 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// Auth0 token getter - to be called from components with Auth0 hook
+let getAuth0Token: (() => Promise<string | undefined>) | null = null;
+
+export function setAuth0TokenGetter(tokenGetter: () => Promise<string | undefined>) {
+  getAuth0Token = tokenGetter;
+}
+
+// Helper function to get auth headers
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  try {
+    if (getAuth0Token) {
+      const token = await getAuth0Token();
+      if (token) {
+        console.log('🔐 QueryClient: Adding Authorization header', {
+          hasToken: !!token,
+          tokenLength: token?.length,
+          tokenPreview: token?.substring(0, 20) + '...'
+        });
+        return {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        };
+      }
+    }
+    console.log('🔐 QueryClient: No token available, sending request without auth');
+    return {
+      'Content-Type': 'application/json'
+    };
+  } catch (error) {
+    console.error('🔐 QueryClient: Error getting auth token:', error);
+    return {
+      'Content-Type': 'application/json'
+    };
+  }
+}
+
 // Dynamic backend URL based on environment
 const getBackendUrl = () => {
   // In browser, check if we're running in Docker or development
@@ -47,6 +83,9 @@ export async function apiRequest(
 ): Promise<Response> {
   let apiUrl = url;
   
+  // Get auth headers
+  const authHeaders = await getAuthHeaders();
+  
   // Check if we should make direct backend calls (Firebase hosting)
   if (isStaticHosting() && (url.startsWith("/v1") || !url.startsWith("/api"))) {
     // Direct backend call for static hosting
@@ -57,11 +96,26 @@ export async function apiRequest(
       apiUrl = `${backendUrl}/v1${url}`;
     }
     
+    console.log('🌐 API Request:', {
+      method,
+      url: apiUrl,
+      headers: authHeaders,
+      hasData: !!data,
+      isStaticHosting: true
+    });
+    
     const res = await fetch(apiUrl, {
       method,
-      headers: data ? { "Content-Type": "application/json" } : {},
+      headers: authHeaders,
       body: data ? JSON.stringify(data) : undefined,
       mode: 'cors',
+    });
+
+    console.log('🌐 API Response:', {
+      status: res.status,
+      statusText: res.statusText,
+      url: apiUrl,
+      ok: res.ok
     });
 
     await throwIfResNotOk(res);
@@ -79,7 +133,7 @@ export async function apiRequest(
     
     const res = await fetch(apiUrl, {
       method,
-      headers: data ? { "Content-Type": "application/json" } : {},
+      headers: authHeaders,
       body: data ? JSON.stringify(data) : undefined,
       credentials: "include",
     });
@@ -99,6 +153,9 @@ export const getQueryFn: <T>(options: {
     const url = queryKey.join("/") as string;
     let apiUrl = url;
     
+    // Get auth headers
+    const authHeaders = await getAuthHeaders();
+    
     // Check if we should make direct backend calls (Firebase hosting)
     if (isStaticHosting() && (url.startsWith("/v1") || !url.startsWith("/api"))) {
       // Direct backend call for static hosting
@@ -110,6 +167,7 @@ export const getQueryFn: <T>(options: {
       }
       
       const res = await fetch(apiUrl, {
+        headers: authHeaders,
         mode: 'cors',
       });
 
@@ -131,6 +189,7 @@ export const getQueryFn: <T>(options: {
       // /api endpoints remain relative (handled by Express server)
       
       const res = await fetch(apiUrl, {
+        headers: authHeaders,
         credentials: "include",
       });
 

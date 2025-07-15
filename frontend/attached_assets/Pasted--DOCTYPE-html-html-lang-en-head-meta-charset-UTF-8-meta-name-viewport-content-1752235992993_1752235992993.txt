@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>wahrify Clone</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Lighter gray background */
+        }
+        /* Custom scrollbar for a more polished look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e2e8f0;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-white/80 backdrop-blur-lg border-b border-slate-200 sticky top-0 z-10">
+            <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-4">
+                    <div class="flex items-center space-x-2">
+                        <h1 class="text-2xl font-bold text-black">wahrify</h1>
+                    </div>
+                    <button class="bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-300 flex items-center space-x-2 shadow-sm hover:shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                        </svg>
+                        <span>New Chat</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 w-full max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Chat Bubbles Section -->
+            <div class="space-y-6">
+                <!-- User Query Bubble (Right Aligned) -->
+                <div class="flex justify-end">
+                    <div class="bg-green-200 text-slate-800 p-4 rounded-lg rounded-br-none shadow-sm max-w-2xl">
+                        <p>What would you like to verify today?</p>
+                    </div>
+                </div>
+
+                <!-- Claim Bubble (Left Aligned) -->
+                <div class="flex justify-start">
+                     <div class="bg-white p-4 rounded-lg rounded-bl-none border border-slate-200 shadow-sm max-w-2xl">
+                        <p class="text-slate-600 font-medium leading-relaxed">
+                            <span class="font-bold text-slate-900">Claim:</span> The GBU-57 bomb penetrates 200 feet underground, causing subsurface explosions rather than surface craters. Context: Miley & Kaplan's battle damage assessment (BDA) images of Florida showing limited surface craters due to the bomb's deep-penetration design.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analysis Section -->
+            <div class="mt-8">
+                 <div class="flex justify-start">
+                     <div class="bg-white p-4 rounded-lg rounded-bl-none border border-slate-200 shadow-sm">
+                        <p class="text-lg font-semibold text-slate-800">Here is my analysis:</p>
+                    </div>
+                </div>
+
+                <div class="mt-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                        <!-- Left Column: Reliability & Analysis -->
+                        <div class="lg:col-span-3 flex flex-col gap-6">
+                            <div class="flex flex-col sm:flex-row items-center gap-6 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                <!-- Reliability Score Circle -->
+                                <div class="flex flex-col items-center gap-4 flex-shrink-0">
+                                    <h3 class="font-semibold text-slate-600">Reliability Score</h3>
+                                    <div class="relative w-40 h-40 sm:w-44 sm:h-44">
+                                        <svg class="w-full h-full" viewBox="0 0 36 36">
+                                            <path class="text-slate-200" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3.5" />
+                                            <path class="text-green-500" stroke-dasharray="80, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" transform="rotate(-90 18 18)" />
+                                        </svg>
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <span class="text-4xl font-bold text-slate-800">80%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Reliability Text -->
+                                <div class="flex-1 text-center sm:text-left">
+                                    <p class="text-3xl font-bold text-green-600">The claim is reliable,</p>
+                                    <p class="text-lg text-slate-600 mt-2">you can share with your network.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex-1">
+                                 <p class="text-slate-700 leading-relaxed">
+                                    The statement claims that the GBU-57 bombs penetrate 200 feet underground causing subsurface explosions rather than surface craters. While the search results do not provide a definitive confirmation of the exact penetration depth, they do suggest that the GBU-57 bomb is a deep-penetrating weapon capable of reaching and destroying deeply buried bunkers and hardened targets. Some sources mention a penetration depth of up to 200 feet, but the certainty of these sources varies. Based on the available information, it appears that the GBU-57 bomb is designed to penetrate deep underground, but the exact depth of 200 feet is not consistently confirmed across all sources. Therefore, the claim is likely to be true, but not definitively proven.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Sources -->
+                        <div class="lg:col-span-2 flex flex-col">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-xl font-bold text-slate-900">Sources</h3>
+                                <a href="#" class="text-sm font-medium text-blue-600 hover:underline">User Guidelines</a>
+                            </div>
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col h-full">
+                                <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between">
+                                    <div>
+                                        <h4 class="font-semibold text-slate-700">Avg. Source Credibility</h4>
+                                        <p class="text-xs text-slate-500 mt-1">Based on 5 sources</p>
+                                    </div>
+                                    <div class="text-center ml-4 flex-shrink-0">
+                                        <p class="text-4xl font-bold text-slate-800">8</p>
+                                        <p class="text-sm font-semibold text-green-600">77%</p>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 space-y-3 overflow-y-auto flex-grow pr-2">
+                                    <!-- Source Cards -->
+                                    <div class="border border-slate-200 rounded-lg p-3 bg-white hover:bg-slate-50 hover:border-blue-300 transition-all duration-200 cursor-pointer">
+                                        <span class="text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">Credibility: 85%</span>
+                                        <h4 class="font-semibold text-slate-800 mt-2">See how a bunker-buster bomb works. GBU-57 penetrates deep...</h4>
+                                        <a href="#" class="text-xs text-blue-600 truncate block mt-1">cnn.com</a>
+                                    </div>
+                                    <div class="border border-slate-200 rounded-lg p-3 bg-white hover:bg-slate-50 hover:border-blue-300 transition-all duration-200 cursor-pointer">
+                                        <span class="text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">Credibility: 81%</span>
+                                        <h4 class="font-semibold text-slate-800 mt-2">What to know about the MOP and the B-2...</h4>
+                                        <a href="#" class="text-xs text-blue-600 truncate block mt-1">cbp.gov</a>
+                                    </div>
+                                    <div class="border border-slate-200 rounded-lg p-3 bg-white hover:bg-slate-50 hover:border-blue-300 transition-all duration-200 cursor-pointer">
+                                        <span class="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">Credibility: 68%</span>
+                                        <h4 class="font-semibold text-slate-800 mt-2">The Massive Ordnance Penetrator Bomb...</h4>
+                                        <a href="#" class="text-xs text-blue-600 truncate block mt-1">bostonmagazine.com</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-white/80 backdrop-blur-lg border-t border-slate-200 sticky bottom-0">
+            <div class="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div class="flex items-center gap-4">
+                    <div class="relative flex-grow">
+                         <input type="text" placeholder="Start typing or paste a new claim..." class="w-full bg-slate-100 border border-slate-300 rounded-full py-2.5 pl-4 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200">
+                         <button class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                         </button>
+                    </div>
+                     <div class="flex items-center gap-2 flex-shrink-0">
+                        <div class="flex text-slate-300">
+                            <!-- Star Icons -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" class="text-yellow-400 cursor-pointer hover:text-yellow-500 transition-colors"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" class="text-yellow-400 cursor-pointer hover:text-yellow-500 transition-colors"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" class="text-yellow-400 cursor-pointer hover:text-yellow-500 transition-colors"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" class="text-yellow-400 cursor-pointer hover:text-yellow-500 transition-colors"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" class="cursor-pointer hover:text-yellow-500 transition-colors"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+</body>
+</html>
