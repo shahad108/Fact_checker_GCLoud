@@ -76,21 +76,31 @@ class Auth0Middleware:
         """Verify JWT token and return payload."""
         try:
             unverified_header = jwt.get_unverified_header(token)
-            logger.debug(f"Unverified token header: {json.dumps(unverified_header, indent=2)}")
+            logger.error(f"DEBUG: Token header: {json.dumps(unverified_header, indent=2)}")
 
             jwks = await self._get_jwks()
+            available_kids = [key.get("kid") for key in jwks["keys"]]
+            logger.error(f"DEBUG: Available JWKS kids: {available_kids}")
+            logger.error(f"DEBUG: Looking for kid: {unverified_header.get('kid')}")
+            
             rsa_key = None
 
             for key in jwks["keys"]:
                 if key["kid"] == unverified_header["kid"]:
                     rsa_key = key
+                    logger.error(f"DEBUG: Found matching key: {key.get('kid')}")
                     break
 
             if not rsa_key:
+                logger.error(f"DEBUG: No matching key found for kid: {unverified_header.get('kid')}")
+                logger.error(f"DEBUG: Full JWKS: {json.dumps(jwks, indent=2)}")
                 raise HTTPException(status_code=401, detail="Invalid token key")
 
-            payload = jwt.decode(token, rsa_key, algorithms=self.algorithms, audience=self.audience, issuer=self.issuer)
-            logger.debug(f"Decoded token payload: {json.dumps(payload, indent=2)}")
+            logger.error(f"DEBUG: Verifying with audience: {self.audience}")
+            logger.error(f"DEBUG: Verifying with issuer: {self.issuer}")
+            logger.error(f"DEBUG: Verifying with algorithms: {[self.algorithms]}")
+            payload = jwt.decode(token, rsa_key, algorithms=[self.algorithms], audience=self.audience, issuer=self.issuer)
+            logger.error(f"DEBUG: Token verified successfully: {json.dumps(payload, indent=2)}")
             return payload
 
         except ExpiredSignatureError:

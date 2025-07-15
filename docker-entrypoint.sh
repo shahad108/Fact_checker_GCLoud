@@ -11,4 +11,4 @@ echo "Running database migrations..."
 alembic upgrade head
 
 echo "Starting the application..."
-uvicorn app.main:app --host 0.0.0.0 --port 8001
+uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8001}

@@ -29,12 +29,12 @@ class Settings(BaseSettings):
     
     OPENROUTER_API_KEY: str = ""
 
-    AUTH0_DOMAIN: str = "veri-fact.ca.auth0.com"
-    AUTH0_AUDIENCE: str = "https://veri-fact.ca.auth0.com/api/v2/"
-    AUTH0_CLIENT_ID: str = ""
-    AUTH0_CLIENT_SECRET: str = ""
+    AUTH0_DOMAIN: str = "dev-biaz2wvxnngf4umq.us.auth0.com"
+    AUTH0_AUDIENCE: str = "https://wahrify-backend-xei2aqlqeq-ew.a.run.app"
+    AUTH0_CLIENT_ID: str = "KQNwVSFsgUoHligVdTiXDS3VInNzfzRs"
+    AUTH0_CLIENT_SECRET: str = "X3u_JsUzHp9pwf5q-kRv2GeKCtu06v0rR8Zyyf4L1D_Z5MVykE6n_Osjunb6z9qg"
     AUTH0_ALGORITHMS: str = "RS256"
-    AUTH0_ISSUER: str = "https://veri-fact.ca.auth0.com/"
+    AUTH0_ISSUER: str = "https://dev-biaz2wvxnngf4umq.us.auth0.com/"
 
     DEBUG: bool = False
 

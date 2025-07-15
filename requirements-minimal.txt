@@ -60,7 +60,7 @@ tiktoken==0.8.0
 tenacity==9.0.0
 orjson==3.10.7
 
-# Google Cloud
+# Google Cloud (for AI services)
 google-auth==2.35.0
 google-api-core==2.21.0
 google-cloud-aiplatform==1.70.0

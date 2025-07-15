@@ -87,10 +87,16 @@ temp/
 *.old
 
 # Machine Learning models (if locally cached)
-models/
+# NOTE: This excludes ML model files, NOT app/models directory
+/models/
 *.pkl
 *.joblib
 *.model
+
+# Backup directories
+*_backup_*/
+app_backup_*/
+migrations_backup_*/
 
 # Reports and documentation builds
 reports/
