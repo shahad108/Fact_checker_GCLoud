@@ -1,6 +1,6 @@
 # Wahrify - AI-Powered Fact-Checking Platform (Google Cloud Edition)
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)]()
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Google Cloud](https://img.shields.io/badge/Google%20Cloud-Platform-4285F4.svg)](https://cloud.google.com/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115.0-009688.svg)](https://fastapi.tiangolo.com/)
@@ -929,29 +929,19 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
 
 ## 📋 License
 
-```
-MIT License
+**PROPRIETARY SOFTWARE - ALL RIGHTS RESERVED**
 
-Copyright (c) 2025 Wahrify Fact-Checking Platform
+© 2024 Wahrify.de - All Rights Reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This software is the exclusive property of Wahrify.de and is protected by copyright laws and international treaty provisions. No part of this software may be used, reproduced, distributed, or transmitted in any form or by any means without the prior written permission of Wahrify.de.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+**UNAUTHORIZED USE IS STRICTLY PROHIBITED**
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
+Any unauthorized use, reproduction, or distribution of this software or any portion of it may result in severe civil and criminal penalties, and will be prosecuted to the fullest extent of the law.
+
+For licensing inquiries, contact: legal@wahrify.de
+
+This license agreement is governed by the laws of Germany.
 
 ## 📞 Support & Contact
 

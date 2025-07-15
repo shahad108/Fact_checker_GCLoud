@@ -23,6 +23,13 @@ wheels/
 *.egg
 MANIFEST
 
+# Node.js Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+frontend/dist/
+frontend/node_modules/
+
 # Environment files
 .env
 .env.local
@@ -67,6 +74,9 @@ infrastructure/terraform/.terraform.lock.hcl
 .DS_Store?
 Thumbs.db
 get-pip.py
+server/public
+vite.config.ts.*
+*.tar.gz
 
 # Database
 *.db
@@ -113,11 +123,6 @@ backend-frontend-configuration-report.md
 Dockerfile.dev
 docker-compose.override.yml
 docker-compose.dev.yml
-
-# Node.js (if any)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
 
 # OS generated
 Icon?
